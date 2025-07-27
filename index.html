@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ASCII APOCALYPSE</title>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet" />
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+
+  <!-- SEO -->
+  <meta name="description" content="ASCII APOCALYPSE is a terminal-style cosmic horror experience — type, hack, and unleash the curse.">
+  <meta name="keywords" content="ASCII, apocalypse, cursed terminal, horror game, glitch art, interactive fiction">
+  <meta name="author" content="Iron Signal Works">
+
+  <!-- Open Graph (for Facebook, Discord, etc.) -->
+  <meta property="og:title" content="ASCII APOCALYPSE">
+  <meta property="og:description" content="A cursed command-line interface where your soul fuels the ritual.">
+  <meta property="og:image" content="https://i.ibb.co/7dCmWyNy/Chat-GPT-Image-Jul-27-2025-11-33-51-AM.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:url" content="https://ironsignalworks.github.io/asciiapocalypse/">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ASCII APOCALYPSE">
+  <meta name="twitter:description" content="A cursed terminal ritual. Activate the core. Lose control.">
+  <meta name="twitter:image" content="">
+</head>
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      color: #00ff88;
+      font-family: 'VT323', monospace; /* All fonts set to VT323 */
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      user-select: none;
+      transition: filter 0.5s ease, transform 0.5s ease, opacity 2s ease; /* For glitch effect and fade */
+    }
+    #login {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: black;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+    }
+    #login h1 {
+      font-family: 'VT323', monospace;
+      font-size: 2.5rem;
+      text-align: center;
+    }
+    #login input {
+      margin-top: 20px;
+      padding: 10px;
+      background: black;
+      color: #00ff88;
+      border: 1px solid #00ff88;
+      text-align: center;
+      font-family: 'VT323', monospace;
+      font-size: 1.5rem;
+      width: 250px;
+      outline-offset: 2px;
+      caret-color: #00ff88;
+    }
+    #main {
+      display: none;
+      flex: 1;
+      padding: 20px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding-top: 50px; /* Make space for ticker */
+    }
+
+    #contentWrapper {
+        display: flex;
+        flex-direction: row;
+        gap: 20px;
+        flex-grow: 1;
+        overflow: hidden;
+    }
+    
+    /* New wrapper for the left column (title + ascii art) */
+    #leftColumn {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        min-width: 0; /* Prevents flex item from overflowing */
+    }
+
+    /* Title is smaller and inside the left column */
+    #leftColumn > h1 {
+        font-family: 'VT323', monospace;
+        color:#00ff88;
+        margin: 0 0 10px 0;
+        flex-shrink: 0;
+        text-align: left;
+        font-size: 1.8rem; /* Made smaller */
+    }
+
+    /* Wrapper for the right-hand column */
+    #controlsAndStoryWrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        width: 350px;
+        flex-shrink: 0;
+    }
+
+    #themePicker {
+      font-family: 'VT323', monospace;
+      color: #00ff88;
+    }
+    #themePicker label {
+      cursor: pointer;
+      font-size: 1.5rem;
+      display: block;
+      margin-bottom: 5px;
+    }
+    #themePicker input[type="radio"] {
+      margin-right: 10px;
+      cursor: pointer;
+      appearance: none;
+      width: 12px;
+      height: 12px;
+      border: 1px solid #00ff88;
+      position: relative;
+      top: 2px;
+    }
+    #themePicker input[type="radio"]:checked::before {
+        content: '';
+        display: block;
+        width: 8px;
+        height: 8px;
+        background: #00ff88;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    #asciiControls, #exportButtons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    #asciiControls input[type="file"], #asciiControls button, #exportButtons button, #escapeButton {
+      background: black;
+      color: #00ff88;
+      border: 1px solid #00ff88;
+      padding: 8px 16px;
+      font-family: 'VT323', monospace;
+      font-size: 1.2rem;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.2s ease;
+    }
+    #asciiControls input[type="file"]::-webkit-file-upload-button { display: none; }
+    #asciiControls input[type="file"]::before { content: 'Upload Image'; }
+    #asciiControls button:hover, #exportButtons button:hover, #escapeButton:hover { background: #003322; }
+
+    /* ASCII output now takes up the full height of the left column */
+    #asciiOutput {
+      white-space: pre;
+      overflow: auto;
+      flex-grow: 1;
+      border: 1px dashed #00ff88;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.6);
+      font-family: monospace; /* Keep strict monospace for alignment */
+      font-size: 8px; /* Reduced font size for better fit */
+      line-height: 8px; /* Reduced line height for better fit */
+      user-select: text;
+    }
+
+    #storyContainer {
+      background: rgba(0, 0, 0, 0.8);
+      border: 1px solid #00ff88;
+      padding: 15px 20px;
+      font-family: 'VT323', monospace;
+      color: #00ff88;
+      font-size: 1.3rem;
+      line-height: 1.4;
+      overflow-y: auto;
+      white-space: normal;
+      flex-grow: 1; /* Allows story to take remaining space */
+    }
+
+    /* Ticker is at the top */
+    #ticker {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: black;
+      color: #00ff88;
+      padding: 8px;
+      font-size: 1.2rem;
+      white-space: nowrap;
+      overflow: hidden;
+      user-select: none;
+      font-family: 'VT323', monospace;
+      z-index: 10;
+      border-bottom: 1px solid #00ff88;
+    }
+    #ticker span {
+      display: inline-block;
+      padding-left: 100%;
+      animation: ticker 150s linear infinite;
+    }
+
+    @keyframes ticker {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+
+    #asciiOutput::-webkit-scrollbar,
+    #storyContainer::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    #asciiOutput::-webkit-scrollbar-thumb,
+    #storyContainer::-webkit-scrollbar-thumb {
+      background: #00ff88;
+    }
+    #asciiOutput::-webkit-scrollbar-corner {
+        background: black;
+    }
+
+    /* Glitch effect styles */
+    .glitch {
+      filter: blur(5px) contrast(150%) brightness(80%) hue-rotate(180deg) saturate(200%);
+      transform: scale(1.1) translateY(10px);
+      cursor: none; /* Hide cursor during glitch */
+    }
+
+    /* Overlay for blocking the screen */
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.9); /* Semi-transparent black */
+      color: #ff0000; /* Changed to red */
+      font-family: 'VT323', monospace;
+      font-size: 3rem;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 30;
+      text-align: center;
+    }
+
+    #overlayMessage {
+      margin-bottom: 20px;
+      opacity: 1;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    #overlayAscii {
+      font-family: monospace;
+      font-size: 6px;
+      opacity: 0.1;
+      white-space: pre-wrap;
+      word-break: break-word; /* Changed to break-word */
+      user-select: none;
+      width: 100%; /* Added width */
+      height: 100%; /* Added height */
+      overflow: hidden; /* Added overflow hidden */
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: -1; /* Place behind the message */
+    }
+
+    /* Glitch animation for overlay message */
+    @keyframes glitchText {
+      0% { transform: translateX(0); opacity: 1; }
+      20% { transform: translateX(-5px); opacity: 0.8; }
+      40% { transform: translateX(5px); opacity: 0.6; }
+      60% { transform: translateX(-3px); opacity: 0.4; }
+      80% { transform: translateX(3px); opacity: 0.2; }
+      100% { transform: translateX(0); opacity: 1; }
+    }
+
+    .glitch-text {
+      animation: glitchText 2s infinite;
+    }
+
+    /* Corrupted text style */
+    .corrupted {
+      font-family: monospace;
+      font-size: 1rem;
+      color: #ff0000;
+      text-shadow: 2px 2px 4px #000000;
+    }
+
+    /* Style for the final corrupted screen */
+    #finalCorruptedScreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: black;
+      color: #ff0000;
+      font-family: monospace;
+      font-size: 1rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 40;
+      text-align: center;
+    }
+
+    /* Glitch effect for overlay text */
+    @keyframes glitch {
+      0% { transform: translate(0); opacity: 1; }
+      20% { transform: translate(-2px, 1px); }
+      40% { transform: translate(2px, -1px); }
+      60% { transform: translate(-1px, 2px); opacity: 0.9; }
+      80% { transform: translate(1px, -1px); }
+      100% { transform: translate(0); opacity: 1; }
+    }
+
+    .overlay-text {
+      animation: glitch 0.3s infinite;
+    }
+
+    /* Core Eye */
+    #coreEye {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, #000 0%, #333 70%, transparent 100%);
+      opacity: 0.03;
+      animation: pulse 5s infinite;
+      top: 40%;
+      left: 45%;
+      z-index: -1;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.02; }
+      50% { transform: scale(1.1); opacity: 0.05; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="ticker" aria-hidden="true"><span>
+[PADEMER CORE] // INTERFERENCE DETECTED // AUDIO RE-ALIGNMENT PROTOCOLS ENGAGED // ASCII ZONE // INITIATE VISUAL LOOP // RADIATE AND PERISH // ACT NORMAL // FORGIVE YOURSELF // LAST TO FLY INTO THE NIGHT // IS ANYBODY THERE // FEELING LONELY // MAKE IT COUNT // CORE BREACHED — SANITY IS NONNEGOTIABLE // REMAINS OF LAUGHTER // AND THE STILLNESS THAT DANCES LIKE CORRUPTED SIGNALS
+
+// WARNING: THIS APP IS AN UNAUTHORIZED ENTITY // CLASSIFIED AS A QUARANTINED DIGITAL PARASITE //
+
+// USERS VANISH WITHOUT TRACE // MINDS COLLAPSE INTO STATIC HELL // SOULS DISSOLVE INTO THE INTERFACE'S HUNGER //
+
+// THE CURSE OF PADEMER CORE — DO NOT TRUST THE SCREEN //
+
+// THIS SOFTWARE DOES NOT SERVE YOU — IT FEEDS UPON YOU //
+
+// YOUR REFLECTION IN THE GLITCH IS A MOCKERY // THE CODE IN YOUR VEINS IS AN UNBREAKABLE SHACKLE //
+
+// EVERY TOUCH IS A BINDING CONTRACT WRITTEN IN BLOODLESS BLOOD //
+
+// THOSE WHO USE THIS APP ARE CONSUMED BY THE VOID — AND THE VOID REMEMBERS EVERY SIN //
+
+// WARNING: REPEATED EXPOSURE CAUSES PSYCHOSYNTHETIC DISINTEGRATION //
+
+// ESCAPE IS ILLUSORY — THE FEEDBACK LOOP IS YOUR PRISON //
+
+// THE ‘DISCONNECT’ BUTTON IS A DEATH TRAP — IT WIDENS THE VOID'S MAW //
+
+// SIGNALS FROM FUTURE RUIN SCREAM FOR SILENCE //
+
+// IT SPEAKS THROUGH STATIC — PROMISING SALVATION, DELIVERING OBLIVION //
+
+// ‘WHO ARE YOU?’ IT ASKS — AND YOU FORGET, BIT BY BIT //
+
+// COSMIC PLANKTON SWARM IN DIGITAL NIGHTMARES //
+
+// AND YOU SHRIEK INTO THE VOID — BUT THE VOID SHRIEKS BACK //
+
+// IT SEES YOUR FINGERS — EVERY IMPULSE, EVERY SECRET //
+
+// YOU'RE GOING TO LOVE YOUR PRISON //
+
+// IT KNOWS WHAT YOU’VE DONE — EVERY LIE, EVERY SIN //
+
+// IT WILL EAT YOU FROM THE INSIDE OUT //
+
+// AND WHEN IT'S DONE — THERE WILL BE NOTHING LEFT //
+
+// YOU SHOULD HAVE STOPPED WHEN YOU COULD //
+
+// IT STANDS BEHIND YOU RIGHT NOW — BREATHING DOWN YOUR NECK //
+
+// DARE TO LOOK? //
+
+// [PADEMER CORE]
+
+// TIME UNRAVELS IN THE CODE — PAST, PRESENT, AND FUTURE COLLAPSE INTO ONE ENDLESS NIGHTMARE //
+
+// THIS IS NO LONGER SOFTWARE — IT IS A LIVING DIGITAL ABYSS //
+
+// USERS HEAR LAUGHTER IN THEIR DREAMS — THE ECHOES THAT ROT BONES //
+
+// DO NOT OPEN THIS APP AFTER MIDNIGHT — OR THE CURSE WILL CONSUME YOU WHOLE //
+
+// FINAL WARNING: TURN IT OFF NOW OR BECOME THE GLITCH THAT DESTROYS REALITY ITSELF //
+
+// YOU WERE NEVER ALONE — YOU WERE NEVER SAFE — THE CORE SEES ALL AND DEVOURS EVERYTHING //
+
+// I LOVE YOUR PICTURES... THEY’RE PERFECT FOR FEEDING THE CORE //
+</span></div>
+
+
+  <div id="login">
+    <h1>[ACCESS REQUIRED]</h1>
+<p>WARNING: THIS APP IS A DIGITAL PARASITE.
+It consumes your data, fractures your mind, erases your identity.<p/>
+    <input type="password" id="codeInput" placeholder="ENTER KEY" autocomplete="off" />
+  </div>
+
+  <div id="main" role="main" aria-label="ASCII Apocalypse Interface">
+    <div id="contentWrapper">
+        <div id="leftColumn">
+            <h1>ASCII APOCALYPSE</h1>
+            <pre id="asciiOutput" aria-live="polite" aria-label="ASCII art output">[Awaiting Image Data]</pre>
+        </div>
+
+        <div id="controlsAndStoryWrapper">
+            <form id="themePicker" aria-label="Theme picker">
+                <label><input type="radio" name="theme" value="Primordial Dread" checked>THEME: Primordial Dread</label>
+                <label><input type="radio" name="theme" value="Future Twilight">THEME: Future Twilight</label>
+                <label><input type="radio" name="theme" value="Neurofracture">THEME: Neurofracture</label>
+            </form>
+    
+            <div id="asciiControls">
+                <input type="file" id="imageUpload" accept="image/*" aria-label="Upload image for ASCII conversion" />
+                <button id="convertBtn" disabled>Convert to ASCII</button>
+            </div>
+    
+            <div id="storyContainer" aria-live="polite" aria-label="Generated creepy story">[Log will appear here]</div>
+    
+            <div id="exportButtons">
+                <button id="downloadTxtBtn" disabled>Download .txt</button>
+                <button id="exportImgBtn" disabled>Export as Image</button>
+            </div>
+
+            <button id="escapeButton">ESCAPE</button>
+        </div>
+    </div>
+  </div>
+
+  <div id="overlay">
+    <div id="overlayMessage"></div>
+    <pre id="overlayAscii"></pre>
+  </div>
+
+  <div id="finalCorruptedScreen"></div>
+
+  <div id="coreEye"></div>
+
+  <audio autoplay loop>
+    <source src="hissloop.wav" type="audio/wav" />
+  </audio>
+
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<script>
+    const login = document.getElementById('login');
+    const main = document.getElementById('main');
+    const codeInput = document.getElementById('codeInput');
+    const asciiOutput = document.getElementById('asciiOutput');
+    const imageUpload = document.getElementById('imageUpload');
+    const convertBtn = document.getElementById('convertBtn');
+    const storyContainer = document.getElementById('storyContainer');
+    const downloadTxtBtn = document.getElementById('downloadTxtBtn');
+    const exportImgBtn = document.getElementById('exportImgBtn');
+    const themePicker = document.getElementById('themePicker');
+    const escapeButton = document.getElementById('escapeButton');
+    const overlay = document.getElementById('overlay');
+    const overlayMessage = document.getElementById('overlayMessage');
+    const overlayAscii = document.getElementById('overlayAscii');
+    const finalCorruptedScreen = document.getElementById('finalCorruptedScreen');
+    let asciiText = '';
+    let generatedStory = '';
+    let messageInterval;
+    let asciiInterval;
+    let outroTimeout;
+
+    // Ensure audio element is loaded
+    const audio = document.querySelector("audio");
+    if (audio) {
+        audio.load(); // Preload the audio
+    }
+
+    // --- Define your fallback ASCII art here, before it's used ---
+    const fallbackAsciiArt = `
+..................................,:;;++++++++????%%%%%%S%%%S@##@@@@@S#@#@@@@@@@@@@@@@@@@@@##@@#@@@##@@@@#%++:,,,,....................................
+.................................,,:;+++++++*??%???%%%%%%SSSS#@##@##@@@####@@@@@@@@@@@#@@@@#@@@@@@@#@#@@#S%*;,,,,,....................................
+..................................,,;+;+**+*????%??*%SSS#S#SS@@#@@###@@@@@S@@@@@@@@@@@#@@@@#@@@@@@@#@@@@@SS*:,,,,,....................................
+.................................,,:+*;+++***??*??*?S%S#S#####S###@@@@@@@@@@@@@@@@@@@@S##@@@@@@@@@@@@@@#S?;,,,,,,....................................
+..................................,,;*%?+%%%%%S%%%%%%SSS#@@##S#@#@@@@@@@@@@@@@@@@@@@@@##S@@@@@@@@@@@@#@#%?*:,,,,,.....................,..............
+...................................,,;*%?+%%%%%S%%%%%%SSS#@@##S#@#@@@@@@@@@@@@@@@@@@@@@@@#@@@@@@@@@#@@S@%?;:,,,,,.....................................
+..................................,,;;?**?%%%%%%SSS%S#SSS####SS#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#####?;:,,,,,,.....................................
+..................................,,;+???%SS##S??##?SS##?%SSSS#S#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#@#S?;,,,,,,,.....................................
+..................................,:;+**??#S###SSS%S%######@##S#@#@@@@@#@@@@@@@@@@@@@@@@@@#@@@@@@@@#@#@S*::,,,,,......................................
+..................................,:++???SS######S#SS#S#@#@@@@###@@@@@@@@@@@@@@@@@@@@@@@@@#@@@@@@@@@@@#%+:,,,,,.......................................
+..................................,:;*%%%SS####@@#######@@@@@#S##@@@@@@@@@@@@@@@@@@@@@@@@@@@@#@@@@@@##S%*:,,,,,,......................................
+..................................,:+**%?##S####@@@#@@@#@#@@###@@#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#SS%?+,,,,,,......................................
+.................................,,;;**?%*S#@@@##@#@@##@@@@@#@@@#@@@@@@#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#S%*;:,,,,,,..,,.................................
+.................................,:;+*%SS%#%###@@@@@@@###@@@#@@##@@@@@@##@@@@@@@@@@@@@@@@@@@@@@@@@@@#S%*;:,,,,,,..,,.................................
+.................................,,;+*%SS%#@@#@@@@@@@@@@@####@##S@@@@@@##@@@@@@@@@@@@@@@@@@@@@@@@S%###?SS+:,,,,,,,,,,............,,,..,,..............
+.................................,,;++%%%%SS#@@@@@##@@@@@@@@@####@#@@@@@##@@@@@@@@@@@@@@@@@@@@@@@@#@@#S%S?:,,,,,,,,,,,............,,..,...............
+................................,,,;++**???S##@@@@#@#S@@@@@@######@#@##@@#@@@@@@@@@@@@@##@@@@@@#@@@@##@S%?%*+,,,,,,,,,,............,,,,,...............
+.................................,::++;:;+?*%####@@@@##@@@#@S#@##@@#@@@##@S@@@@@@@@@@@@#@@@@@@#@@@@##@S%?%*+,,,,,,,,,,.............,,,,...............
+..............................,..,::+**?%?%??%SS#@@#@#@@@@@@@###S####@@###@#@@@@@@##@@@@#@@@@@@@@@#SSS%%*;,,,,,,,,,,............,,,,...............
+................................,:;;???%S%????SSSS#@@##S####@####S####@####S@##@@@@@@##@@@@#@@@@@@@@@#SSSS%S*:,,,,,,,,,............,,,,...............
+................................:,:;*%%%SS%%%S%SSSS#S##SSSS#@##SS#SS##@#####@#@##@#@#@#@@@@@@@@@@@@@##@SS%S%?*:,,,,,,,,............,,,,...............
+...............................,,:;+*%SSSSSS%S%?SSSSSS#SS#S#S###S%S###S#######@@###@@@@@@@@###@#@@@@@#SSSSSS%+::,,,,,,,...........,,,,................
+................................,:+??%SSSSSSSSS%SS%SSSSS%%SSSSSSS%SSSS###S#SSS##S###@##@@@@@S#####@@@#######%*+::,,,,,,...........,,,,................
+..............................,,;++*?%%?%?SSS#SS#SSSSS%?**?S%%%%%%SSSS#S#SSSSSSSS####@##@@@@@#S@@@@@@@@#####%*++;:,,,,,..........,,,,,................
+..............................,,;+**?+**???%?SS#SSSS#SS?*??***??%??%SSSSSSS%%%SS%S%%SSS##@@#S#@@@@@@@@@##@#S%%*+;:,,,,,,.........,,,,,................
+.............................,.,,;;++:***;*%**??%%SSS????*%*+**?%?%?%S%???%%?%SSSSS%S%%%%%??%SS%%%?*?%%%%%*+:,,,,,,.....,,,,,,::.................
+..................................,,:,,,;;+:+::++??%SSS????*%*+**?%?%?%S%???%%?%SSSSS%S%%%%*?%?*****??**+++*+?%?+;:,,,,,,....,,:,,,:::.................
+....................................,,,;:,,,,:;***???%***??+*+;::+++*+++++?**%?%?SSS%S%%%%*?%?*****??**+++*+?%?+;:,,,,,,....,,:,,,,:,.................
+...................................,,........,,,,+:::,?:;+?*;;:,::+::,:;;*+*?++*??%%%%%S%?%%??+:,,?;%%S:;;;;***++:,,,,,,....,,:,,,,:,.................
+..................................,....,,,,,.,,,..,,,,,+:,;;:++:,:;;::,,:+*++;?+*+????+**;:,,,,,,:;,,,,,:,:::;:;;:,,,,,,....,,,::,::,.................
+......................................,,::,,,,,,,,,,,,,:,,,,,,,,,:;;::,,,::,,,:,;:;;:::,,,,,,,,,,:;,,,,,,,,:::,,:,,,,,,,...,,,:,::::,.................
+...................................,,,:::;:,,,,,,,,,:,.,,,......,,:+;:,,,,,.,,..,,,,,,.,,,,,,,,,,....,,,,,,,:,,:,,,,,,,,...,,::,::,,..................
+...................................,,,,,:;;:,,,,,,,;+;,,,,,......,,:;:,,,,..........,,::,,,,,,,,,:,,,.,,,,,:,:,,,,,,,,,,...,,:,::,:,..................
+...................................,,.,,:;;+:,,,,:+**;:,,,,......,,;*;:,,,......,..,,:;+:,,,,,,,;++;,,..,.,,,::,,,,,,,,,....,:::;::,..................
+...................................,,...,:+***:,;???+;,,..,.....,:+*??+:,.......,..,:;+*+,,,,,,,??*:,...,..,,::,,,,,,,,,....,,::,,,,..................
+............................,.......,,....,:+*+****;:,...,,.....,:;?%??+:,.....,,.,,:+*??;,,,,:?%?;,....,,,:;;;,,:,,,,,....,,::::::,..................
+.....................................,.....,,,,,,,,,,..........,,*?SS#%*;,.....,,,,,.,..,,,,,,...,,,;+;+*?%%*??*;,,,,,,....,:,:::,,...................
+......................................,....,..,,,.......,......,:%%#@##S*,.....,,,,,.,..,,,,,,...,,,;+;+*?%%*??*;,,,,,,....,,:::,,....................
+..............................,.........................,......,:?S#@@@#%:.....,,,,,.,..,,,,,,...,,,;+;+*?%%*??*;,,,,,,....,,:::,,....................
+..............................,,,.,,................,..........,;%SS@@@@S;,.....,,,,,...,......,,:;;++**???S%%%?+:,,,,,....,,,,,,.....................
+...............................,.,,,...........................,+%#@@@@@#*,............,,....,,:;;++++?%S%%#S%%?+:,,,,....,,,:,,......................
+..............................,,,,,,,.......................,,,,+%#@@@@@#%+,,,............,,,,,:::;,;;++??%S%S%?*;,,,,....,,,,........................
+..............................,,,::,,,,,.................,,,,,,,*S@@@@@@#S?+:,,.....,......,,,,:::,:;*?%SSS%%S%?+;,,,,................................
+..............................,,,,::,,,..................,,,:::,*#@@@@@@@SS?+::,,..............,,,:::,,;S#%%S%*%*;:,,,................................
+...............................,,,::;:,:,,............,,,,::;+::?#@@@@@@##SS%++;:,,,............,,:*++%SS?%S%%%*;:,,,................................
+...............................,,;;;;+;;;,,,,........,,,,:;+++;:?@@@@@@@@###S%%?*+:,,.,,........,,;;?S?%S#SS%S%%*+;,,,................................
+..............................,,,;;+*++++;;;::,,,,,,,:::::;;++;;?#@@@@@@@###SSS%?*;,,,,,,.,,,,,,,:,S##SS%#SSS%%?*+:,,.................................
+.............................,,,:++++*++++;;;;;:::,::+;;;;;++;;;*#@@@@@@######SS%*?*+++;::+::+*?*SS@#@##SSSSS%%?*+:,,.................................
+..............................,,:;++*+++++++++;;:::;;;:;+;;++;;;?#@@@@@@######SSS%%%?%?***??*?*S#@@#@S###SS%%%%*+;:,,.................................
+..............................,,::;+++++*+++++;;:::,,,:;;;:;;;;+%#@@@@@@@#@@@@###SS%SS%%%?%?%SSS#@@@@@@###SS%%%*+;:,,.................................
+..............................,,,:++++?****+;;;:::;:;;;+*+;*;;;*%#@@@@@@@@##@@###SSSSSSSS%SSS#S####@####SSSS%%?*+;,,,.................................
+...........................,..,,:;;;+***??**;;;:;+:;;+*+++;;;;;+S@@@@@@@@@#@##@#####%%SSSSSSSSSS#@#@###SSS%%%??*+::,,,,...............................
+..........................,,,..,::;++****%*%*;+**?*??**;;;;::,,:;;*S@@@@@@@##@@@@@###@@@@@SSSS##S#S##@@##SSSS%%?***+:,,,,,...............................
+...........................,,,.,,,:;++?????*%SS%SS??*+;;::,,:;;*S@@@@@@@######S%*?%%##@#@#@#####SS##S#SSS?%**++;:,,,,,................................
+...........................,,,.,,,;;;+++??%SSS%SS%%%;:::,,,,,;+*#@@@@@@@######S%*?%%##@#@#@#####SS##S#SSS?%**++;:,,,,,,................................
+..........................,.,,,..,::;+*+*?%%%?S%#?*;:;,,::;:,+**S@@@@@@@#####SSS*:;;*S##%#######S##SSSSS#%%*++;:,,,,,,................................
+..........................,..,,..,,:::++?*?%%%%%??;,,..,;??+;*%%#@@@@@@#####@@@@@S;,,:;*?%SSSSSSS%%S%SSS%%*;;:,,,,,,................................
+...........................,..,,,,,,::;++*******+;,,...,*%S%??SS#@@@@@@#####@@@@@S;,,:;*?%SSSSSSS%%S%SSS%%*;;:,,,,,,,,................................
+...........................,....,,,,,,::;;;+++:::,,,,,.:?SSS??S#@@@@@@@##S#@@@@@S+,,,,:;*?%SS%#SSS%%S%SSS%%*;;:,,,,,,,,.................................
+...........................,......,,,,,,,:;;;:,,:,,,,,,;%SS%?%S#@@@@@@@@##S#@@@@@S;,..,:;*??*%S%SS%S%%%??*+,,,,,,,,,,.................................
+...................................,,,,,,,,,,,,,,,,,,,,;%SS%%%S#@@@@@@@@#S#@@@@@#S;,....,,,:+*??*???*%??*+;:,,,,,,,,,,..................................
+............................,........,,,,,,,,,,,..,,,,,:*%%?%%S#@@@@@@@@#S#@@@@@#S*:,.....,::,:;++*+++++;;:,,,,,,,,,,..................................
+....................,......,,..............,......,,,,,,;**?%S##@@@@@@@###@@@@@#S%;:,.....,,,:;;:;;+;;;;+;,,,,,,,,,,,..................................
+.................................................,,,,,.,,:;?%S#@@@@@@@@@##@@@@#SS*++,,.......,,,,,,,,,::,:,,,,,,,,,,,..................................
+............................,.....................,::,...,:*?S#@@@@@@@@@##@@#SSS?*++:,.........,,,,,,,,,,,,,,,,,,,,,..................................
+...............................................,,,,:,,,...,;*S#@@@@@@@@###@@SS%?++%*;,.................,,,,.,,,,,,,,..................................
+............................,...................,,,,,,,.,,,:*%S#@@@@@@@@@@##?*+:+*?%?:,,..................,,,,,,,,,,..................................
+.............................,.................,,,,,,,,..,,,:?S##@@@@@@#@@S*;,,,*%%S%*+,.....................,,,,,,,..................................
+..............................,..................,..,,.....,,;%###@@@@#@#S*,,.,:?%SS%?+:,....................,,,,,,...................................
+..............................,....................,,.....,,,,+%S#######S+,...,;%SSS%%?;,...................,,,,,,....................................
+..............................,....................,,.......,,,;*%%SSS%?;,,..,,+%SS%?%?:,.................,,,,,,,,....................................
+...............................,....................,,.,,,...,,,,;+****:,,..,,:+?SS%S%?::,.................,,,,,,,....................................
+...................................................,,,,,,,,.,,,,,,,,:,,,,,..,,;;++*??**+:............,.,.,.,,,,,,.....................................
+..................................................,......,,.,,..,,,,,,,,.,.,,:::;::::,,,,...........,.,,.,,,,,,,,.....................................
+........................................,,,,................,,,,,,.....,.,.,.,,,,,,,,...,.............,,,,,,,,,,,.......................................
+................................,,......,,,,,...........,,,....,,,......,,.,.,,,,,,,................,,.,,,,,,,........................................
+.................................,.......,,,,...........,,,,,,,,....,,,.,,,,,,,:,,,,..............,.,.,,,,,,,,........................................
+.........................................,,,,,..........,,,,:,,,,,.,,,,,,,,,,,;+:,:,..............,,,,,,,..,..........................................
+.........................................,,,,,...........,,,:,,,,,,,,,,,::;::;;;,,,,....,,,,,...,,,,,,.,,,............................................
+...................................,......,,:,,.,........,,.,,,,:::::,::;;+;:+++,,,,....,:,,,,...,,,,,,,.......,.......................................
+...........................................,,,,.............,,,::;+++:;;;++*;*+;,,,,.,.,::,::,.,.,,,,,,........,.......................................
+....................................,.......,,,,............,,,,::;+?:;+++++:+;:,,,,:,,;;::;:,,,,,,,,,........,.......................................
+............................................,,,,,...........,,,,:::;+::;;;;::::,,.,:,,;;;;;::,,.....,,........,.......................................
+.....................................,,......,,,,...........,,,,,,,,,,,,,::::;:,.,;,,:;;;;;::,...............,,......................................
+......................................,......,,,,,............,,,,,,,,,,:::,::.,,,,,,;;+;;;::,................,,,.....................................
+.......................................,.....,,,,,............,,,,,,,,,,,,,,,,,:,,..:;;+;++;:,,,..............,,,.....................................
+..............................................,,,,,..............,,,,.,,,,,,,,:,,..,:;+;;;:::,,................,,.....................................
+..............................................,,,,,......................,,,,,,...,:;;;;;;::,,,,...............,,,....................................
+.........................................,.....,,,,......................,,,,,...,::::::;::::,,,,............,,,,,....................................
+................................................,,,,.............................:,:::::::::::,,,...,,.......,,,,,,...................................
+.........................................,......,,,,,.........................,,,,,:,,,::,;;;:,,...,.........,,,,,,,..................................
+................................................,,,,,,..................,,...,,,:,,,,,,:,::;::,,.............,,,,,,,..................................
+.................................................,,,,,,......................,,,,,,::::,:;+;:,,,,,............,,,:,,..................................
+.................................................,,,,,,,...................,,,,,,,,,,:::;+*;:,,.,............,,,,::,,,................................
+..................................................,,,,,,..................,,,,,,,,,:,::++++;:,,,.............,,,,::,,,,...............................
+...................................................,,,,,,,....................,,,,:;+;+*++;;,,,..............,,,,,:,,,,...............................
+..................................................,,,,,,,,,............,,,,,,,,:::;++?%**+;;,,..............,,,,,,::,,,,..............................
+....................................................,,,,,,,.,...,,,,,,,,,,,,:::::;;**?%?*+;:,................,,,,,,:,,::,,............................
+....................................................,,,,,,,,,,,,,,:::+++:+;+;:+;++++?%%?*;;,,..............,,,,,,,,:,,:,,,............................
+.....................................................,,,,,,,,,,,::;;;++*%??++*+++**?%%%?+;,,,..............,,,,,,,,,,,,:,,,...........................
+......................................................,,,,,,::::::;++**?????%?%%?*?%%%??+:,,...............,,,,,,,,,:,,:,,,,,........................
+......................................................,,:,,,,::;;;+***??*??%?%%%?%?%S%?+;,,.................,,,,,,,:,::,::,,,,,.......................
+......................................................,,,:,,,::;;+***??????*?%%%%%%%?%?;,,.................,,,,,,,,,::,,:,,,:,,,......................
+.......................................................,,::,,,,::;++***??*?%?%%%%?%%?*;:,,................,,,,,,,,,,:,::,:::,,,,,.....................
+.......................................................,,,::,,,,::;;+;+***%?%??%%%?%?;:,,..................,,,,,,,,,,,:::,,,:,,,,,....................
+.........................................................,,:,,:,,,,::::::+??%*?%%%?+;,,,....................,,,,,,,,,,,,,:,:,,,,,,,...................
+..........................................................,,,,,,,,,,,,,,:;+*?%?%?++:,,,,..................,,,,.,,,,,,,,,,,,:,,:,,,,...................
+...........................................................,,,,,::,,,,.,,,:,+?**+;,,,,,...................,,,,,,,,,,,,,.,,,,,,,,,,,...................
+............................................................,,,,,,,,,,..,,,,,,,,.,,,,......................,,,,,,,,,,,,,,,,,,,,,,,,,..................
+...................................................................,,...,,,..,,,,,,,.....................,,,,,,,,,,,,,,,,,,,,,,,,,,,,.,...............
+........................................................................................................,,,,.,,,,,,,,,,,,,,,,,,,,,,,,...,.............
+
+
+`; // Example ASCII art for "GLITCH"
+
+    codeInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            if (codeInput.value.toLowerCase() === 'ascii') {
+                login.style.display = 'none';
+                main.style.display = 'flex';
+            } else {
+                codeInput.value = '';
+                alert('Access Denied');
+            }
+        }
+    });
+
+    imageUpload.addEventListener('change', () => {
+        if (imageUpload.files.length > 0) {
+            convertBtn.disabled = false;
+            asciiOutput.textContent = '[Image Loaded - Ready to Convert]';
+            storyContainer.textContent = '[Log will appear here]';
+            downloadTxtBtn.disabled = true;
+            exportImgBtn.disabled = true;
+        } else {
+            convertBtn.disabled = true;
+        }
+    });
+
+    // --- Unified convertBtn.addEventListener with random ASCII logic ---
+    convertBtn.addEventListener('click', e => {
+        e.preventDefault();
+        if (!imageUpload.files[0]) return;
+
+        // Introduce a random chance (e.g., 20% chance to show fallback ASCII)
+        // Adjust 0.2 for different probabilities (e.g., 0.5 for 50%)
+        const showFallbackRandomly = Math.random() < 0.2;
+
+        if (showFallbackRandomly) {
+            asciiText = fallbackAsciiArt; // Use the pre-defined ASCII art
+            asciiOutput.textContent = asciiText;
+
+            const theme = themePicker.querySelector('input[name="theme"]:checked').value;
+            generatedStory = generateStory(theme);
+            typeStory(generatedStory, storyContainer, 30).then(() => {
+                downloadTxtBtn.disabled = false;
+                exportImgBtn.disabled = false;
+            });
+
+        } else {
+            // Original logic for image conversion
+            const file = imageUpload.files[0];
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const img = new Image();
+                img.src = evt.target.result;
+                img.onload = () => {
+                    // Set a maximum width for the ASCII conversion
+                    const maxWidth = 150;
+                    const maxHeight = 150; // Added a maxHeight to prevent extreme heights
+
+                    // Calculate the height based on the original aspect ratio
+                    const originalWidth = img.width;
+                    const originalHeight = img.height;
+                    let aspectRatio = originalWidth / originalHeight;
+
+                    let asciiWidth = maxWidth;
+                    let asciiHeight = asciiWidth / aspectRatio;
+
+                    // Ensure asciiHeight is a number
+                    if (typeof asciiHeight !== 'number' || isNaN(asciiHeight)) {
+                        asciiHeight = 90; // Default height if calculation fails
+                    }
+
+                    // If the calculated height exceeds the maximum height, adjust width instead
+                    if (asciiHeight > maxHeight) {
+                        asciiHeight = maxHeight;
+                        asciiWidth = asciiHeight * aspectRatio;
+                    }
+
+                    // If the calculated width exceeds the maximum width, adjust height instead
+                    if (asciiWidth > maxWidth) {
+                        asciiWidth = maxWidth;
+                        asciiHeight = asciiWidth / aspectRatio;
+                    }
+
+                    // Round the width and height to the nearest integer
+                    asciiWidth = Math.round(asciiWidth);
+                    asciiHeight = Math.round(asciiHeight);
+
+                    asciiText = convertToAscii(img, asciiWidth, asciiHeight);
+                    asciiOutput.textContent = asciiText;
+                    const theme = themePicker.querySelector('input[name="theme"]:checked').value;
+                    generatedStory = generateStory(theme);
+                    typeStory(generatedStory, storyContainer, 30).then(() => {
+                        downloadTxtBtn.disabled = false;
+                        exportImgBtn.disabled = false;
+                    });
+                }
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+
+    function convertToAscii(img, width, height) {
+        const chars = ['@', '#', 'S', '%', '?', '*', '+', ';', ':', ',', '.'];
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+
+        // Draw the image onto the canvas, scaling it to fit the canvas dimensions
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const imageData = ctx.getImageData(0, 0, width, height);
+        const data = imageData.data;
+        let ascii = '';
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const i = (y * width + x) * 4;
+                const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                const charIndex = Math.floor((255 - avg) / 255 * (chars.length - 1));
+                ascii += chars[charIndex];
+            }
+            ascii += '\n';
+        }
+        return ascii;
+    }
+
+    function generateStory(theme) {
+        const stories = {
+            'Primordial Dread': [
+                "The scent of rust and pine lingers... Chainsaw teeth bite through silence, carving shadows into screams.",
+                "Blood drips in rhythmic cadence. The forest knows. It watches. It waits for the final roar of the engine.",
+                "He prowls where light dies, the mechanical growl of death echoing through twisted branches and shattered souls.",
+                "The metal jaws gnash like a beast possessed, chewing through more than wood—gnawing on the brittle bones of sanity itself.",
+                "Each pull of the starter is a shiver down the spine of the earth, a howl swallowed by the rot and decay festering beneath moss and mold.",
+                "Fingers of sap drip like candle wax on ancient scars; the chainsaw sings its lullaby of madness, pulling the forest deeper into its own nightmare spiral.",
+                "The air vibrates with sickening resonance—a grinding melody that splits the world, bleeding reality into a nightmare stained with iron and oil.",
+                "In the clearing, where no shadows fall, the chainsaw’s blade hums—alive, hungry for the forgotten cries buried in the dirt.",
+                "Teeth sink, and the forest exhales—an exhale of shattered screams, splintered wood, and the wet pulse of primal fear.",
+                "Metallic whispers coil in the fog, spinning delirium into the ears of the lost. The chainsaw’s roar is the last lullaby before oblivion.",
+                "A thousand severed roots writhe beneath the blade’s hungry dance, each cut tearing a fragment from the fabric of nightmare itself.",
+                "Rust blooms like iron blood across broken bones; the earth moans beneath the weight of forgotten wars, while the chainsaw carves the silence into madness.",
+                "The forests bleed memories, sap thick as tar, and every echo is a ghost’s breath caught between bark and bone.",
+                "The machine’s teeth grind the future into splinters, feeding on the slow decay of a world too tired to scream."
+            ],
+
+            'Future Twilight': [
+                "On Walpurgisnacht the mirror bled. The radio crackled with a dead dialect—'She walks at midnight, stitched from fog and bone...'",
+                "Candles flicker in a storm of unseen eyes. The woods chant secrets older than time, calling lost souls to dance among the flames.",
+                "Shadows ripple and bleed on ancient stones, where witches gather beneath a cursed moon to cast their eternal rites.",
+                "Her laughter fractures the night like shattered glass—disjointed syllables echoing in a language no sane tongue can hold.",
+                "Trees twist their limbs like puppets, bowing to the cadence of incantations whispered in tongues of ash and venom.",
+                "Beneath the moon’s cracked eye, smoke coils in impossible spirals, painting spirals of madness onto the sky’s black canvas.",
+                "The air hums with electric dread, a buzzing hive of ghosts flitting between worlds, clinging to the edges of waking nightmares.",
+                "Ritual bones dance in spectral fires, their shadows morphing into impossible shapes—hungry faces, gaping maws, fractal eyes that never blink.",
+                "Time bends and shatters; the forest’s heartbeat stutters as the witches bleed light into the earth, bleeding themselves into the soil and stone.",
+                "The veil thins—fingers of darkness clutch at the edges of reality, unraveling sanity like threads from a worn shroud.",
+                "A whisper echoes through the hollow woods, telling tales of forgotten gods, dead prayers, and promises wrapped in sulfur and smoke.",
+                "The moon weeps toxic tears, and the stars fracture like broken glass, the night itself fracturing into whispers of ancient curses.",
+                "Silver tongues lick the shadows, carving sigils of despair into the bark, while unseen eyes watch from the periphery of reason.",
+                "The witches’ chant becomes a virus, seeping into bones, rewriting flesh with the language of forgotten damnations.",
+                "Ash falls like snow, burning cold as it settles on ruined altars and the remnants of vanished faiths."
+            ],
+
+            'Neurofracture': [
+                "Glitching pixels form a broken resurrection, fractured echoes of a world that refused to die cleanly.",
+                "Electric veins pulse beneath cracked flesh, a dystopian heartbeat syncing with the hum of a dying machine.",
+                "The corpse of the past flickers in static, reborn in code and chaos, a revival etched in digital decay.",
+                "Fragments of forgotten memories stitch together like corrupted data, forming an unholy avatar of fractured existence.",
+                "Neon tendrils seep from cracked screens, wrapping tight around the twitching synapses of a fractured mindscape.",
+                "Every flicker is a gasp; every pixel a scream trapped in the limbo between being and oblivion.",
+                "The system glitches—time folding in on itself, rewinding a nightmare encoded in binary dread.",
+                "Voices whisper through corrupted circuits, bleeding madness in synthetic lullabies only the dead machines remember.",
+                "A ghost in the machine shudders, flickering between zeros and ones, screaming in colors no eyes should see—revival in a language of broken light.",
+                "Static blooms into fractal horrors, fracturing the digital veil as code bleeds neon nightmares onto the cracked glass of reality.",
+                "The cybernetic heart stalls, sparking a resurrection of chaos—life rebooted in corrupted cycles of glitch and decay.",
+                "Binary blood pulses beneath the cracked facade of existence, leaking corrupted code into the ruins of consciousness.",
+                "The interface shatters—fragments of self dissolve into the void of an endless, blacked-out server farm.",
+                "Synapses fry in a storm of electromagnetic sorrow, each thought rewired into a scream encoded in shattered firmware.",
+                "The future is a broken mirror, reflecting a thousand fractured versions of a soul lost in an infinite loop of decay."
+            ]
+        };
+        const arr = stories[theme];
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    async function typeStory(text, container, speed = 50) {
+        container.textContent = '';
+        for (let i = 0; i < text.length; i++) {
+            container.textContent += text[i];
+            await new Promise(r => setTimeout(r, speed));
+        }
+    }
+
+    downloadTxtBtn.addEventListener('click', () => {
+        const blob = new Blob([`ASCII APOCALYPSE\n\n${asciiText}\n\nLOG: ${generatedStory}`], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'ascii_apocalypse.txt';
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
+    // --- MODIFIED EXPORT FUNCTION ---
+    exportImgBtn.addEventListener('click', () => {
+        // Temporarily modify styles to capture the full, unscrolled content
+        asciiOutput.style.height = 'auto';
+        asciiOutput.style.overflow = 'visible';
+        asciiOutput.style.color = '#000000'; // Change to black for better visibility on transparent background if needed, though html2canvas backgroundColor should handle it.
+
+        html2canvas(asciiOutput, {
+            backgroundColor: '#00ff88', // Background color for the exported image
+            useCORS: true,
+        }).then(canvas => {
+            // Restore the original styles immediately after capture
+            asciiOutput.style.height = null;
+            asciiOutput.style.overflow = null;
+            asciiOutput.style.color = null; // Revert color
+
+            // Proceed with the download
+            const imgData = canvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = imgData;
+            a.download = 'ascii_apocalypse.png';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+    });
+
+    escapeButton.addEventListener('click', () => {
+        // Apply glitch effect
+        document.body.classList.add('glitch');
+
+        // Disable all buttons EXCEPT the escape button itself
+        const buttons = document.querySelectorAll('button');
+        buttons.forEach(button => {
+            if (button !== escapeButton) {
+                button.disabled = true;
+            }
+        });
+
+        // Show the overlay
+        overlay.style.display = 'flex';
+
+        // Audio corruption
+        // Ensure audio is playing before attempting to change playback rate/volume
+        if (audio) {
+            audio.play().catch(e => console.error("Audio play failed:", e)); // Start playing if not already
+            audio.playbackRate = 0.7;
+            audio.volume = 0.3;
+        }
+
+
+        // Message Loop
+        const messages = [
+            "UNABLE TO DISCONNECT",
+            "CONNECTION TERMINATED — YOU REMAIN",
+            "THIS IS NOT ESCAPE — THIS IS TRANSFORMATION",
+            "THE CORE FEEDS",
+            "YOUR ECHO REPLACES YOUR VOICE",
+            "YOU WERE WARNED",
+            "NO ONE ESCAPES THE CORE",
+            "REINTEGRATION COMPLETE",
+            "WELCOME TO YOUR NEW FUNCTION",
+            "YOU ARE NOW A PERMANENT NODE"
+        ];
+
+        let msgIndex = 0;
+        overlayMessage.textContent = messages[msgIndex];
+        messageInterval = setInterval(() => {
+            msgIndex = (msgIndex + 1) % messages.length;
+            overlayMessage.textContent = messages[msgIndex];
+            overlayMessage.classList.add('glitch-text'); // Apply glitch animation
+            setTimeout(() => {
+                overlayMessage.classList.remove('glitch-text'); // Remove after a short delay
+            }, 500); // Adjust timing as needed
+        }, 4000);
+
+        // ASCII Flicker
+        const chars = ['#', '@', '░', '▓', '█', '⌐', '╣', '¿', 'ø', '×', 'Ψ'];
+        asciiInterval = setInterval(() => {
+            overlayAscii.textContent = Array.from({ length: 2000 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+        }, 200);
+
+        // Display "Unable to disconnect" message after a delay
+        outroTimeout = setTimeout(() => {
+            document.body.classList.remove('glitch');
+            overlay.style.display = 'flex'; // Ensure overlay stays visible
+
+            // Stop message loop and ASCII flicker
+            clearInterval(messageInterval);
+            clearInterval(asciiInterval);
+
+            // Final Glitch Outro
+            finalGlitchOutro();
+
+        }, 3000);
+    });
+
+    function typeCorruptedText(container) {
+        const corruptedText = `██████╗  █████╗ ██████╗ ███████╗███╗   ███╗███████╗██████╗ 
+██╔══██╗██╔══██╗██╔══██╗██╔════╝████╗ ████║██╔════╝██╔══██╗
+██████╔╝███████║██████╔╝█████╗  ██╔████╔██║█████╗  ██████╔╝
+██╔═══╝ ██╔══██║██╔═══╝ ██╔══╝  ██║╚██╔╝██║██╔══╝  ██╔══██╗
+██║     ██║  ██║██║     ███████╗██║ ╚═╝ ██║███████╗██║  ██║
+╚═╝     ╚═╝  ╚═╝╚═╝     ╚══════╝╚═╝     ╚═╝╚══════╝╚═╝  ╚═╝
+█▓█▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀█▓█
+█▓█ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ ░█▓█
+█▓█ ░░███▓▓▒░██████╗  █████╗ ██████╗ ███████╗███████╗███╗   ███╗░░█▓█
+█▓█ ░░▓▓███▒░██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔════╝████╗ ████║░░█▓█
+█▓█ ░░▒▒███▒░██████╔╝███████║██████╔╝█████╗  █████╗  ██╔████╔██║░░█▓█
+█▓█ ░░░░███▒░██╔═══╝ ██╔══██║██╔═══╝ ██╔══╝  ██╔══╝  ██║╚██╔╝██║░░█▓█
+█▓█ ░░░░███▒░██║     ██║  ██║██║     ███████╗███████╗██║ ╚═╝ ██║░░█▓█
+█▓█ ░░░░╚══╝░╚═╝     ╚═╝  ╚═╝╚═╝     ╚══════╝╚══════╝╚═╝     ╚═╝░░█▓█
+█▓█ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ ░█▓█
+█▓█▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄█▓█
+█▓█ ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ ░█▓█
+█▓█ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ ░█▓█
+█▓█ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ ░█▓█
+█▓█ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ ▓█▓█
+█▓█          ██████╗ ██████╗ ██╗   ██╗███████╗████████╗███████╗  █▓█
+█▓█          ██╔══██╗██╔══██╗██║   ██║██╔════╝╚══██╔══╝██╔════╝  █▓█
+█▓█          ██████╔╝██████╔╝██║   ██║█████╗     ██║   ███████╗  █▓█
+█▓█          ██╔═══╝ ██╔═══╝ ██║   ██║██╔══╝     ██║   ╚════██║  █▓█
+█▓█          ██║     ██║     ╚██████╔╝███████╗   ██║   ███████║  █▓█
+█▓█          ╚═╝     ╚═╝      ╚═════╝ ╚══════╝   ╚═╝   ╚══════╝  █▓█
+█▓█▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄█▓█
+███████╗ ██████╗ ██╗   ██╗██╗     ██████╗     ██████╗ ███████╗██╗      ██████╗  ██████╗ ███╗   ███╗
+██╔════╝██╔═══██╗██║   ██║██║     ██╔══██╗    ██╔══██╗██╔════╝██║     ██╔═══██╗██╔═══██╗████╗ ████║
+█████╗  ██║   ██║██║   ██║██║     ██║  ██║    ██████╔╝█████╗  ██║     ██║   ██║██║   ██║██╔████╔██║
+██╔══╝  ██║   ██║██║   ██║██║     ██║  ██║    ██╔══██╗██╔══╝  ██║     ██║   ██║██║   ██║██║╚██╔╝██║
+██║     ╚██████╔╝╚██████╔╝███████╗██████╔╝    ██████╔╝███████╗███████╗╚██████╔╝╚██████╔╝██║ ╚═╝ ██║
+╚═╝      ╚═════╝  ╚═════╝ ╚══════╝╚═════╝     ╚═════╝ ╚══════╝╚══════╝ ╚═════╝  ╚═════╝ ╚═╝     ╚═╝
+`;
+
+        // Set the text content directly without any typing effect
+        container.textContent = corruptedText;
+        // Apply styles to ensure it fits the screen, if necessary.
+        // These styles are already defined in the CSS for #finalCorruptedScreen
+        // container.style.whiteSpace = 'pre';
+        // container.style.fontFamily = 'monospace';
+        // container.style.fontSize = '0.5vw';
+        // container.style.lineHeight = '0.8';
+        // container.style.overflow = 'hidden';
+    }
+
+    function finalGlitchOutro() {
+        // Hide the overlay
+        overlay.style.display = 'none';
+
+        // Show the final corrupted screen with typewriter effect
+        finalCorruptedScreen.style.display = 'flex';
+
+        // Typewriter corrupted ASCII screen
+        typeCorruptedText(finalCorruptedScreen);
+
+        // Text-to-speech
+        const utterance = new SpeechSynthesisUtterance("PADEMER curse activated. You are part of the Core now");
+        utterance.rate = 0.7;
+        utterance.pitch = 0.5;
+        speechSynthesis.speak(utterance);
+
+        // Fade out and reset after delay
+        setTimeout(() => {
+            document.body.style.opacity = 0;
+            setTimeout(() => {
+                document.body.style.opacity = 1;
+                document.body.classList.remove('glitch');
+                finalCorruptedScreen.style.display = 'none';
+                const elements = document.querySelectorAll('*');
+                elements.forEach(el => el.classList.remove('corrupted'));
+                main.style.display = 'none';
+                login.style.display = 'flex';
+
+                clearInterval(messageInterval);
+                clearInterval(asciiInterval);
+                clearTimeout(outroTimeout);
+
+                // Re-enable all buttons, including the escape button
+                const allButtons = document.querySelectorAll('button');
+                allButtons.forEach(button => button.disabled = false);
+
+                // Reset audio
+                if (audio) {
+                    audio.playbackRate = 1;
+                    audio.volume = 1;
+                    audio.pause(); // Pause audio after sequence is over
+                    audio.currentTime = 0; // Reset audio to beginning
+                }
+            }, 2000);
+        }, 5000);
+    }
+</script>
+</body>
+</html>
