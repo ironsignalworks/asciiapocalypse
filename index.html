@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <title>ASCII CONVERTER — Iron Signal Works</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 
   <!-- Favicon -->
   <link rel="icon" href="favicon.ico" sizes="any">
@@ -48,7 +48,7 @@
 
   <style>
     :root{
-      --scale:.9; /* readable UI */
+      --scale:.9;
       --bg:#000; --panel:#0b0b0b; --ink:#d0d0d0; --muted:#a0a0a0;
       --border:#3a3a3a; --border-strong:#6a6a6a;
       --mono: ui-monospace,"Cascadia Mono","SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;
@@ -59,17 +59,28 @@
       --ctlH:  calc(50px * var(--scale));
       --pad:   calc(10px * var(--scale));
     }
+    /* Desktop micro downscale ≈ -2% */
+    @media (hover:hover) and (pointer:fine) and (min-width: 1024px){
+      :root{ --scale:.882; }
+    }
+
     *{box-sizing:border-box}
-    html,body{height:100%}
+
     body{
-      margin:0; background:var(--bg); color:var(--ink);
+      margin:0;
+      background:var(--bg); color:var(--ink);
       font:var(--base)/1.4 var(--mono);
-      display:grid; grid-template-rows:auto 1fr auto; gap:var(--pad); padding:var(--pad);
-      overflow:hidden;
+      min-height:100dvh;
+      display:flex; flex-direction:column;
+      gap:var(--pad);
+      padding:var(--pad);
+      overflow-x:hidden;
+      overflow-y:auto;
     }
 
     .hdr,.ftr{
-      border:2px solid var(--border-strong); padding:calc(6px * var(--scale)) calc(8px * var(--scale));
+      border:2px solid var(--border-strong);
+      padding:calc(6px * var(--scale)) calc(8px * var(--scale));
       display:flex; align-items:center; justify-content:space-between; gap:calc(10px * var(--scale));
       background:#0b0b0b;
     }
@@ -87,76 +98,96 @@
     .btn:hover{background:#1d1d1d}
 
     .workspace{
-      display:grid; grid-template-columns:1fr var(--sidew); gap:var(--pad); min-height:0; min-width:0;
+      display:grid; grid-template-columns:1fr var(--sidew);
+      gap:var(--pad);
     }
 
-    /* OUTPUT */
     .panel{
       border:2px solid var(--border); background:#0b0b0b;
-      display:flex; flex-direction:column; min-height:0; min-width:0;
+      display:flex; flex-direction:column;
+      min-width:0;
     }
     .panel h2{
       margin:0; padding:calc(10px * var(--scale)); border-bottom:2px solid var(--border);
       font-size:var(--hsize); color:#e0e0e0; letter-spacing:.06em; text-transform:uppercase;
     }
     #out{
-      flex:1 1 auto; min-height:320px; padding:calc(10px * var(--scale)); margin:calc(10px * var(--scale));
+      flex:1 1 auto;
+      padding:calc(10px * var(--scale)); margin:calc(10px * var(--scale));
       background:#0e0e0e; border:2px solid var(--border);
-      font-family:monospace; font-size:8px; line-height:8px; /* keep ASCII density stable */
+      font-family:monospace; font-size:8px; line-height:8px;
       white-space:pre; word-break:keep-all; overflow-wrap:normal; user-select:text;
       overflow:auto; overflow-x:hidden; min-width:0; contain:content;
       color: var(--out-ink, #d0d0d0);
+      max-height:66svh;
     }
-    #out.anaglyph{
-      text-shadow:-1px 0 rgba(255,0,0,.55), 1px 0 rgba(0,255,255,.55);
-    }
+    #out.anaglyph{ text-shadow:-1px 0 rgba(255,0,0,.55), 1px 0 rgba(0,255,255,.55); }
 
-    /* CONTROLS */
-    .side{
-      border:2px solid var(--border-strong); background:#0b0b0b; display:flex; flex-direction:column; min-width:0;
-    }
-    .controls{padding:calc(14px * var(--scale)); display:flex; flex-direction:column; gap:calc(12px * var(--scale)); height:100%}
-    .side h2{margin:0; font-size:var(--hsize); color:#e0e0e0; letter-spacing:.06em; text-transform:uppercase; border-bottom:2px solid var(--border); padding:calc(10px * var(--scale)) calc(12px * var(--scale))}
+    .side{ border:2px solid var(--border-strong); background:#0b0b0b; display:flex; flex-direction:column; min-width:0; }
+    .controls{ padding:calc(14px * var(--scale)); display:flex; flex-direction:column; gap:calc(12px * var(--scale)); }
+    .side h2{ margin:0; font-size:var(--hsize); color:#e0e0e0; letter-spacing:.06em; text-transform:uppercase; border-bottom:2px solid var(--border); padding:calc(10px * var(--scale)) calc(12px * var(--scale)) }
 
-    .formgrid{
-      display:grid; grid-template-columns:150px 1fr; gap:calc(14px * var(--scale)) calc(16px * var(--scale));
-      align-items:center; min-width:0;
-    }
-    .formgrid .full{grid-column:1 / -1}
-    .formgrid label{font-size:calc(16px * var(--scale)); color:var(--muted); white-space:nowrap}
+    .formgrid{ display:grid; grid-template-columns:150px 1fr; gap:calc(14px * var(--scale)) calc(16px * var(--scale)); align-items:center; min-width:0; }
+    .formgrid .full{ grid-column:1 / -1 }
+    .formgrid label{ font-size:calc(16px * var(--scale)); color:var(--muted); white-space:nowrap }
 
     .ctl{
       background:#121212; color:var(--ink); border:2px solid var(--border);
       height:var(--ctlH); padding:calc(12px * var(--scale)); width:100%; min-width:0; font-size:calc(17px * var(--scale));
     }
-    input[type="file"].ctl{padding:calc(8px * var(--scale))}
-    input[type="color"].ctl{padding:0; cursor:pointer}
+    input[type="file"].ctl{ padding:calc(8px * var(--scale)) }
+    input[type="color"].ctl{ padding:0; cursor:pointer }
 
-    .toggles{
-      display:grid; grid-template-columns:repeat(3,1fr); gap:calc(12px * var(--scale)) calc(16px * var(--scale));
-      align-items:center;
+    .toggles{ display:grid; grid-template-columns:repeat(3,1fr); gap:calc(12px * var(--scale)) calc(16px * var(--scale)); align-items:center; width:100%; }
+    .toggle{ display:flex; align-items:center; gap:calc(12px * var(--scale)); font-size:calc(16px * var(--scale)); color:var(--muted); min-width:0 }
+    .toggle input{ width:calc(22px * var(--scale)); height:calc(22px * var(--scale)); accent-color:#666 }
+
+    .btnGrid2x2{ display:grid; grid-template-columns:1fr 1fr; grid-auto-rows:1fr; gap:calc(12px * var(--scale)); }
+
+    .ftr a{ color:#d0d0d0; text-decoration:none }
+
+    /* Stack on tablets/phones */
+    @media (max-width: 980px){
+      .workspace{ grid-template-columns:1fr; }
+      #out{ max-height:58svh; }
     }
-    .toggle{display:flex; align-items:center; gap:calc(12px * var(--scale)); font-size:calc(16px * var(--scale)); color:var(--muted)}
-    .toggle input{width:calc(22px * var(--scale));height:calc(22px * var(--scale)); accent-color:#666}
-
-    /* 2×2 grid for exports + reset */
-    .btnGrid2x2{
-      display:grid; grid-template-columns:1fr 1fr; grid-auto-rows:1fr;
-      gap:calc(12px * var(--scale));
+    /* Tiny phones — two-column toggles & smaller ASCII density */
+    @media (max-width: 540px){
+      .formgrid{ grid-template-columns: 1fr; }
+      .toggles{ grid-template-columns: repeat(2,1fr); }
+      #out{ font-size:7px; line-height:7px; max-height:52svh; }
+    }
+    @media (max-width:380px){
+      #out{ font-size:6px; line-height:6px; max-height:50svh; }
     }
 
-    .ftr a{color:#d0d0d0; text-decoration:none}
-
-    @media (max-width:980px){
-      .workspace{grid-template-columns:1fr}
-      :root{ --sidew: calc(100% - 2px) }
+    /* Help dialog — centered & scrollable, click-out closes */
+    dialog{
+      border:2px solid var(--border-strong);
+      background:var(--panel);
+      color:var(--ink);
+      padding:0;
+      width:min(92vw, 760px);
+      max-width:calc(100vw - 24px);
+      max-height:88svh;
+      overflow:auto;
+      position: fixed;
+      inset: 50% auto auto 50%;
+      transform: translate(-50%, -50%);
+      margin:0;
     }
+    dialog::backdrop{ background: rgba(0,0,0,.6); }
+    .modal-body{ padding:12px; }
+    .modal-body h3{ margin:0 0 8px 0; letter-spacing:.06em; font-size:var(--hsize); text-transform:uppercase }
+    /* Center the Close button */
+    .modal-close{ display:block; margin:12px auto 0 auto; }
   </style>
 </head>
 <body>
 
 <header class="hdr">
-  <a class="brand" href="https://ironsignalworks.github.io/asciiconverter/?utm_source=ascii-converter&utm_medium=header&utm_campaign=lab-to-site" target="_blank" rel="noopener">
+  <!-- Link changed to ironsignalworks.com -->
+  <a class="brand" href="https://ironsignalworks.com/?utm_source=ascii-converter&utm_medium=header-logo&utm_campaign=lab-to-site" target="_blank" rel="noopener">
     <img src="ascii_logo.png" alt="Iron Signal Works logo"/>
     <h1>ASCII CONVERTER // ISW</h1>
   </a>
@@ -167,13 +198,11 @@
 </header>
 
 <main class="workspace" role="application" aria-label="ASCII Converter">
-  <!-- OUTPUT -->
   <section class="panel" aria-label="ASCII Output">
     <h2>Output</h2>
     <pre id="out" aria-live="polite">[Awaiting image]</pre>
   </section>
 
-  <!-- CONTROLS -->
   <aside class="side" aria-label="Controls">
     <h2>Operator Controls</h2>
     <div class="controls">
@@ -193,7 +222,6 @@
         <label for="ink">Color (Text Ink)</label>
         <input id="ink" type="color" value="#d0d0d0" class="ctl" title="Output & export color"/>
 
-        <!-- 6 toggles in two rows -->
         <div class="full toggles">
           <label class="toggle"><input type="checkbox" id="fit" checked/> Fit to frame</label>
           <label class="toggle"><input type="checkbox" id="invert"/> Invert</label>
@@ -204,7 +232,6 @@
           <label class="toggle"><input type="checkbox" id="threeD"/> 3D</label>
         </div>
 
-        <!-- Exports (top row) + Reset (bottom-right) in 2×2 grid -->
         <div class="full btnGrid2x2" aria-label="Export and Reset">
           <button id="txtBtn" class="btn" disabled>Export .TXT</button>
           <button id="pngBtn" class="btn" disabled>Export .PNG</button>
@@ -223,18 +250,14 @@
 
 <!-- Help -->
 <dialog id="help" aria-label="Instructions">
-  <form method="dialog" style="border:2px solid #3a3a3a;background:#0b0b0b;color:#c9c9c9;padding:12px;min-width:min(720px,92vw)">
-    <h3 style="margin:0 0 8px 0;letter-spacing:.06em;font-size:var(--hsize);text-transform:uppercase">Instructions</h3>
-
-    <!-- NEW: What is ASCII -->
+  <form method="dialog" class="modal-body">
+    <h3>Instructions</h3>
     <p style="margin:8px 0 10px 0;color:#a8a8a8">
       <b>ASCII</b> (American Standard Code for Information Interchange) is the basic set of printable characters
       used by computers. <b>ASCII art</b> maps image brightness to characters so pictures can be displayed as plain text.
       This app samples your image into a grid, picks a character for each cell (based on the selected mode), and renders
       a text version you can copy or export.
     </p>
-
-    <!-- NEW: Why use it -->
     <div style="margin:0 0 12px 0">
       <div style="font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px">Why use it?</div>
       <ul style="margin:0 0 0 18px;padding:0;line-height:1.5">
@@ -244,7 +267,6 @@
         <li>Precise exports (TXT/PNG) with adjustable ink color and size.</li>
       </ul>
     </div>
-
     <ol style="margin:0 0 8px 18px; padding:0">
       <li>Choose an image.</li>
       <li>Select <b>Mode</b> and <b>Ink</b> (text color).</li>
@@ -260,14 +282,7 @@
       </li>
       <li>Rendering is automatic; export TXT / PNG / PNG (BIG).</li>
     </ol>
-
-    <!-- Optional quick tips -->
-    <div style="margin:8px 0 0 0;color:#a8a8a8;font-size:0.95em">
-      <b>Tips:</b> High-contrast source images convert best. “@ Dense” preserves detail; “Blocks” makes bold shapes.
-      Use <b>Fit to frame</b> to prevent horizontal scrolling; turn it off for a raw, larger grid.
-    </div>
-
-    <button value="close" class="btn" style="margin-top:10px">Close</button>
+    <button value="close" class="btn modal-close">Close</button>
   </form>
 </dialog>
 
@@ -291,7 +306,6 @@
   function setInkColor(hex){ els.out.style.setProperty('--out-ink', hex); }
   setInkColor(els.ink.value);
 
-  /* measurements */
   function measureCell(){
     const s = document.createElement('span');
     s.textContent = 'MMMMMMMMMM';
@@ -306,14 +320,15 @@
     const ch = parseFloat(getComputedStyle(els.out).lineHeight) || 8;
     return {cw, ch};
   }
-  function allowedCols(){ const {cw} = measureCell(); return Math.max(20, Math.floor(els.out.clientWidth / cw) - 1); }
+  const allowedCols = ()=> Math.max(20, Math.floor(els.out.clientWidth / measureCell().cw) - 1);
+
   function fitDims(img){
     const {cw, ch} = measureCell();
-       const innerW = els.out.clientWidth, innerH = els.out.clientHeight;
+    const innerW = els.out.clientWidth, innerH = els.out.clientHeight;
     const maxCols = Math.max(20, Math.floor(innerW / cw) - 1);
     const maxRows = Math.max(20, Math.floor(innerH / ch) - 1);
-    const imgAspect = img.height / img.width;  // H/W
-    const charAspect = ch / cw;                // H/W per char
+    const imgAspect = img.height / img.width;
+    const charAspect = ch / cw;
     const desiredRows = Math.max(30, Math.round(maxCols * imgAspect / charAspect));
     let rows = Math.min(desiredRows, maxRows);
     let cols = Math.min(maxCols, Math.max(30, Math.round(rows * (1/imgAspect) * charAspect)));
@@ -322,8 +337,7 @@
     return {cols, rows};
   }
 
-  /* helpers */
-  function toGray(r,g,b){ return (0.299*r + 0.587*g + 0.114*b); }
+  const toGray=(r,g,b)=>(0.299*r + 0.587*g + 0.114*b);
   function hardWrap(text, cols){
     const lines = text.split("\n").flatMap(line=>{
       if (line.length <= cols) return [line];
@@ -333,7 +347,6 @@
     return lines.join("\n");
   }
 
-  /* scramble toggle */
   function scrambleImageURL(img, intensity=45){
     const w=img.width,h=img.height;
     const c=document.createElement('canvas'); c.width=w; c.height=h; const ctx=c.getContext('2d'); ctx.drawImage(img,0,0);
@@ -343,7 +356,7 @@
     for(let y=0;y<cells;y++)for(let x=0;x<cells;x++)blocks.push({sx:x*cw,sy:y*ch,sw:(x===cells-1? w-x*cw:cw),sh:(y===cells-1? h-y*ch:ch)});
     for(let i=blocks.length-1;i>0;i--){const j=(Math.random()<0.4)?Math.floor(Math.random()*blocks.length):i; [blocks[i],blocks[j]]=[blocks[j],blocks[i]];}
     const t=document.createElement('canvas'); t.width=w; t.height=h; const tx=t.getContext('2d');
-    blocks.forEach((b,idx)=>{const x=(idx%cells)*cw, y=Math.floor(idx/cells)*ch; tx.drawImage(c,b.sx,b.sy,b.sw,b.sh,x,y,b.sw,b.sh);});
+    blocks.forEach((b,idx)=>{const x=(idx%cells)*cw, y=Math.floor(idx/cells)*ch; tx.drawImage(c,b.sx,b.sy,b.sw,b.sh);});
     const id=tx.getImageData(0,0,w,h), d=id.data;
     for(let y=0;y<h;y+=2){const row=tx.getImageData(0,y,w,1); tx.putImageData(row, Math.max(-2, Math.min(2,(Math.random()*2-1)*2)), y);}
     for(let i=0;i<d.length;i+=4){const n=(Math.random()-0.5)*18; d[i]+=n; d[i+1]+=n; d[i+2]+=n;}
@@ -351,7 +364,6 @@
     return t.toDataURL('image/png');
   }
 
-  /* convert */
   function convertASCII(img, cols, rows, mode, invert=false){
     const c=document.createElement('canvas'); c.width=cols; c.height=rows;
     const ctx=c.getContext('2d',{willReadFrequently:true}); ctx.drawImage(img,0,0,cols,rows);
@@ -374,7 +386,6 @@
     return out;
   }
 
-  /* width-safe effects */
   function applyEffects(text){
     let lines=text.split("\n");
     if (els.scan.checked){ lines=lines.map((ln,i)=> i%2===1 ? ln.replace(/[^ \n]/g, ch => ch===' ' ? ' ' : '.') : ln); }
@@ -390,7 +401,6 @@
     return lines.join("\n");
   }
 
-  /* render */
   function renderFitted(img, cols, rows){
     busy=true;
 
@@ -401,7 +411,6 @@
 
     els.out.textContent=text;
 
-    // shrink if any overflow
     let guard=0;
     while(els.out.scrollWidth>els.out.clientWidth && maxCols>40 && guard<30){
       maxCols -= 1;
@@ -446,7 +455,6 @@
     clearTimeout(debounce); debounce=setTimeout(doConvert,wait);
   }
 
-  /* base file */
   els.file.addEventListener('change', ()=>{
     if (!els.file.files.length) return;
     els.out.textContent='[Loading image…]';
@@ -456,8 +464,7 @@
     els.txt.disabled=true; els.png.disabled=true; els.pngBig.disabled=true;
   });
 
-  /* live controls */
-  ;['change','input'].forEach(evt=>{
+  ['change','input'].forEach(evt=>{
     [els.mode, els.fit, els.invert, els.scan, els.jitter, els.scramble, els.threeD, els.ink]
       .forEach(el=> el.addEventListener(evt, ()=>{
         if (el===els.ink) els.out.style.setProperty('--out-ink', els.ink.value);
@@ -465,7 +472,6 @@
       }));
   });
 
-  /* reset */
   els.resetBtn.addEventListener('click', ()=>{
     asciiText=''; els.out.textContent='[Awaiting image]';
     els.txt.disabled=true; els.png.disabled=true; els.pngBig.disabled=true;
@@ -477,53 +483,36 @@
     els.jitter.checked=false; els.scramble.checked=false; els.threeD.checked=false;
   });
 
-  /* export — footer scales to image size; signature auto-fits width */
   function exportPNG(text, scale=1){
-    // Read on-screen metrics to preserve aspect
     const cs = getComputedStyle(els.out);
-    const outFont = parseFloat(cs.fontSize) || 8;    // e.g., 8px
-    const outLine = parseFloat(cs.lineHeight) || 8;  // e.g., 8px
-    const ratio = outLine / outFont;                 // typically 1.0 in our UI
+    const outFont = parseFloat(cs.fontSize) || 8;
+    const outLine = parseFloat(cs.lineHeight) || 8;
+    const ratio = outLine / outFont;
 
-    const baseFont = outFont * scale;                // scaled font size
-    const baseLine = baseFont * ratio;               // scaled line height (keeps aspect)
+    const baseFont = outFont * scale;
+    const baseLine = baseFont * ratio;
     const pad = Math.max(6, Math.round(8 * scale));
 
     const lines = text.split("\n");
 
-    // Measure width at the font size we’ll render the ASCII with
     const m = document.createElement('canvas').getContext('2d');
     m.font = `${baseFont}px monospace`;
-    const width = Math.min(
-      6000,
-      Math.max(...lines.map(l => m.measureText(l).width)) + pad * 2
-    );
+    const width = Math.min(6000, Math.max(...lines.map(l => m.measureText(l).width)) + pad * 2);
+    const textHeight = Math.min(6000, Math.ceil(lines.length * baseLine + pad * 2));
 
-    // Text block height (without footer)
-    const textHeight = Math.min(
-      6000,
-      Math.ceil(lines.length * baseLine + pad * 2)
-    );
-
-    // Footer height scales with text height with sane clamps
     const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
     let footerH = clamp(Math.round(textHeight * 0.08), Math.round(16 * scale), Math.round(72 * scale));
-
-    // Final canvas height includes footer
     const height = textHeight + footerH;
 
-    // Create canvas
     const canvas = document.createElement('canvas');
     canvas.width = Math.ceil(width);
     canvas.height = Math.ceil(height);
     const ctx = canvas.getContext('2d');
 
-    // Background + frame around the ASCII block (not around footer)
     ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0,0,canvas.width,canvas.height);
     ctx.strokeStyle = '#3a3a3a';
     ctx.strokeRect(0.5,0.5,canvas.width-1,canvas.height-footerH-0.5);
 
-    // ASCII text
     ctx.font = `${baseFont}px monospace`;
     ctx.textBaseline = 'top';
     ctx.fillStyle = els.ink.value || '#d0d0d0';
@@ -531,17 +520,15 @@
       ctx.fillText(lines[i], pad, Math.round(pad + i * baseLine));
     }
 
-    // Footer bar
     ctx.fillStyle = '#000';
     ctx.fillRect(0, canvas.height - footerH, canvas.width, footerH);
 
-    // Signature font auto-fits width
     let footerFont = clamp(Math.floor(footerH * 0.6), Math.floor(10 * scale), Math.floor(28 * scale));
     ctx.fillStyle = '#bdbdbd';
     ctx.textBaseline = 'alphabetic';
     ctx.font = `${footerFont}px monospace`;
 
-    const sig = FOOTER_LINE;
+    const sig = 'generated by ASCII Converter - ironsignalworks.com';
     let sigWidth = ctx.measureText(sig).width;
     const innerW = canvas.width - pad * 2;
 
@@ -551,16 +538,14 @@
       sigWidth = ctx.measureText(sig).width;
     }
 
-    // Draw signature vertically centered in the footer
     const sigY = canvas.height - Math.round((footerH - footerFont) / 2) - Math.floor(footerFont * 0.2);
     ctx.fillText(sig, pad, sigY);
 
     return canvas.toDataURL('image/png');
   }
 
-  // TXT/PNG exports
   els.txt.addEventListener('click', ()=>{
-    const blob=new Blob([asciiText+'\n\n'+FOOTER_LINE+'\n'],{type:'text/plain'});
+    const blob=new Blob([asciiText+'\n\n'+'generated by ASCII Converter - ironsignalworks.com'+'\n'],{type:'text/plain'});
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='ascii_isw.txt'; a.click(); URL.revokeObjectURL(a.href);
   });
   els.png.addEventListener('click', ()=>{
@@ -568,11 +553,10 @@
     const a=document.createElement('a'); a.href=data; a.download='ascii_isw.png'; a.click();
   });
   els.pngBig.addEventListener('click', ()=>{
-    const data=exportPNG(asciiText,2.0); /* big but same aspect */
+    const data=exportPNG(asciiText,2.0);
     const a=document.createElement('a'); a.href=data; a.download='ascii_isw_big.png'; a.click();
   });
 
-  /* share */
   $('shareBtn').addEventListener('click', ()=>{
     const base='https://ironsignalworks.github.io/asciiconverter/';
     const p=new URLSearchParams();
@@ -589,6 +573,14 @@
   });
 
   $('helpBtn').addEventListener('click', ()=> $('help').showModal());
+
+  /* Click-outside-to-close for the dialog */
+  els.help.addEventListener('click', (e)=>{
+    const form = els.help.querySelector('form');
+    const r = form.getBoundingClientRect();
+    const inside = (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom);
+    if (!inside) els.help.close();
+  });
 
   let resizeTimer=null;
   window.addEventListener('resize', ()=>{ if (!lastDataUrl) return; clearTimeout(resizeTimer); resizeTimer=setTimeout(()=>schedule(40),120); });
