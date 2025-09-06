@@ -5,18 +5,23 @@
   <title>ASCII CONVERTER — Iron Signal Works</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
+  <!-- Favicon -->
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" href="ascii_logo.png">
+  <link rel="apple-touch-icon" href="ascii_logo.png">
+
   <!-- SEO -->
   <meta name="description" content="DOS-style image → ASCII converter by Iron Signal Works. Live rendering, invert/scanlines/jitter/scramble/3D effects, and crisp TXT/PNG export."/>
   <meta name="keywords" content="ASCII art, ASCII converter, image to text, DOS, retro, Iron Signal Works"/>
   <meta name="author" content="Iron Signal Works"/>
   <meta name="robots" content="index,follow"/>
-  <link rel="canonical" href="https://ironsignalworks.com/ascii-converter"/>
+  <link rel="canonical" href="https://ironsignalworks.github.io/asciiconverter/"/>
 
   <!-- Open Graph -->
   <meta property="og:title" content="ASCII CONVERTER — Iron Signal Works"/>
   <meta property="og:description" content="Convert images to ASCII with DOS aesthetics. Live rendering + tidy exports."/>
   <meta property="og:type" content="website"/>
-  <meta property="og:url" content="https://ironsignalworks.com/ascii-converter"/>
+  <meta property="og:url" content="https://ironsignalworks.github.io/asciiconverter/"/>
   <meta property="og:image" content="ascii_logo.png"/>
 
   <!-- Twitter Card -->
@@ -33,7 +38,7 @@
     "name":"ASCII Converter",
     "applicationCategory":"MultimediaApplication",
     "operatingSystem":"Any",
-    "url":"https://ironsignalworks.com/ascii-converter",
+    "url":"https://ironsignalworks.github.io/asciiconverter/",
     "creator":{"@type":"Organization","name":"Iron Signal Works"},
     "description":"DOS-style image to ASCII converter with live rendering and tidy exports."
   }
@@ -151,7 +156,7 @@
 <body>
 
 <header class="hdr">
-  <a class="brand" href="https://ironsignalworks.com?utm_source=ascii-converter&utm_medium=header&utm_campaign=lab-to-site" target="_blank" rel="noopener">
+  <a class="brand" href="https://ironsignalworks.github.io/asciiconverter/?utm_source=ascii-converter&utm_medium=header&utm_campaign=lab-to-site" target="_blank" rel="noopener">
     <img src="ascii_logo.png" alt="Iron Signal Works logo"/>
     <h1>ASCII CONVERTER // ISW</h1>
   </a>
@@ -220,6 +225,26 @@
 <dialog id="help" aria-label="Instructions">
   <form method="dialog" style="border:2px solid #3a3a3a;background:#0b0b0b;color:#c9c9c9;padding:12px;min-width:min(720px,92vw)">
     <h3 style="margin:0 0 8px 0;letter-spacing:.06em;font-size:var(--hsize);text-transform:uppercase">Instructions</h3>
+
+    <!-- NEW: What is ASCII -->
+    <p style="margin:8px 0 10px 0;color:#a8a8a8">
+      <b>ASCII</b> (American Standard Code for Information Interchange) is the basic set of printable characters
+      used by computers. <b>ASCII art</b> maps image brightness to characters so pictures can be displayed as plain text.
+      This app samples your image into a grid, picks a character for each cell (based on the selected mode), and renders
+      a text version you can copy or export.
+    </p>
+
+    <!-- NEW: Why use it -->
+    <div style="margin:0 0 12px 0">
+      <div style="font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px">Why use it?</div>
+      <ul style="margin:0 0 0 18px;padding:0;line-height:1.5">
+        <li>Works everywhere text renders: terminals, READMEs, chats, forums.</li>
+        <li>Lightweight visuals for low-bandwidth sharing.</li>
+        <li>Distinct, retro look for headers, posters, stickers, thumbnails.</li>
+        <li>Precise exports (TXT/PNG) with adjustable ink color and size.</li>
+      </ul>
+    </div>
+
     <ol style="margin:0 0 8px 18px; padding:0">
       <li>Choose an image.</li>
       <li>Select <b>Mode</b> and <b>Ink</b> (text color).</li>
@@ -235,6 +260,13 @@
       </li>
       <li>Rendering is automatic; export TXT / PNG / PNG (BIG).</li>
     </ol>
+
+    <!-- Optional quick tips -->
+    <div style="margin:8px 0 0 0;color:#a8a8a8;font-size:0.95em">
+      <b>Tips:</b> High-contrast source images convert best. “@ Dense” preserves detail; “Blocks” makes bold shapes.
+      Use <b>Fit to frame</b> to prevent horizontal scrolling; turn it off for a raw, larger grid.
+    </div>
+
     <button value="close" class="btn" style="margin-top:10px">Close</button>
   </form>
 </dialog>
@@ -277,7 +309,7 @@
   function allowedCols(){ const {cw} = measureCell(); return Math.max(20, Math.floor(els.out.clientWidth / cw) - 1); }
   function fitDims(img){
     const {cw, ch} = measureCell();
-    const innerW = els.out.clientWidth, innerH = els.out.clientHeight;
+       const innerW = els.out.clientWidth, innerH = els.out.clientHeight;
     const maxCols = Math.max(20, Math.floor(innerW / cw) - 1);
     const maxRows = Math.max(20, Math.floor(innerH / ch) - 1);
     const imgAspect = img.height / img.width;  // H/W
@@ -542,7 +574,7 @@
 
   /* share */
   $('shareBtn').addEventListener('click', ()=>{
-    const base='https://ironsignalworks.com/ascii-converter';
+    const base='https://ironsignalworks.github.io/asciiconverter/';
     const p=new URLSearchParams();
     p.set('mode',els.mode.value);
     p.set('fit',els.fit.checked?'1':'0');
