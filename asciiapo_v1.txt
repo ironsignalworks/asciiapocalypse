@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>ASCII ANOMALY — Iron Signal Works</title>
+
+  <!-- SEO / Social -->
+  <meta name="description" content="Image → ASCII art converter with Regular and Cursed modes. Frame-fit output, crisp exports, optional haunted effects."/>
+  <link rel="canonical" href="https://ironsignalworks.com/ascii-anomaly"/>
+  <meta name="theme-color" content="#000000"/>
+  <meta property="og:title" content="ASCII ANOMALY — ASCII art tool"/>
+  <meta property="og:description" content="Clean ASCII converter with an optional haunted mode."/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://ironsignalworks.com/ascii-anomaly"/>
+  <meta property="og:image" content="isw2_logo.png"/>
+  <meta name="twitter:card" content="summary_large_image"/>
+
+  <!-- Schema -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"WebApplication",
+    "name":"ASCII ANOMALY",
+    "url":"https://ironsignalworks.com/ascii-anomaly",
+    "applicationCategory":"MultimediaApplication",
+    "operatingSystem":"Any",
+    "description":"Image to ASCII converter with Regular and Cursed modes.",
+    "creator":{"@type":"Organization","name":"Iron Signal Works"}
+  }
+  </script>
+
+  <style>
+    :root{
+      --ink:#00ff88; --muted:#8aa292; --bg:#0b0b0b; --panel:#0f0f0f; --border:rgba(0,255,136,.35);
+      --radius:12px; --shadow:0 0 0 1px var(--border),0 12px 36px rgba(0,0,0,.55);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas,"Liberation Mono","Courier New",monospace;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:radial-gradient(1200px 800px at 50% -10%, #121212 0%, var(--bg) 55%);
+      color:#eaeaea; font:16px/1.45 var(--mono); display:grid; place-items:center; overflow:hidden;
+    }
+
+    .wrap{
+      width:min(1100px,94vw); background:linear-gradient(180deg,rgba(16,16,16,.97),rgba(10,10,10,.97));
+      border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow);
+      padding:16px; display:grid; gap:12px; grid-template-rows:auto auto 1fr auto; position:relative;
+    }
+
+    header{display:flex; align-items:center; justify-content:space-between; gap:12px}
+    .brand{display:flex; align-items:center; gap:12px; color:var(--ink); text-decoration:none}
+    .brand img{width:36px; height:36px; image-rendering:pixelated}
+    .brand h1{margin:0; letter-spacing:.05em; color:var(--ink); font-size:20px}
+
+    .seg{display:inline-flex; border:1px solid var(--border); border-radius:10px; overflow:hidden}
+    .seg button{border:0; background:#0d0d0d; color:var(--ink); padding:8px 12px; cursor:pointer}
+    .seg button[aria-pressed="true"]{background:var(--ink); color:#000}
+
+    button{padding:8px 12px; border:1px solid var(--border); background:#0a0a0a; color:#eaeaea; border-radius:8px; cursor:pointer; font-weight:700}
+    button:hover{background:var(--ink); color:#000}
+    button[disabled]{opacity:.55; cursor:not-allowed}
+    select,input[type=file],input[type=number]{border:1px solid var(--border); background:#0a0a0a; color:#eaeaea; border-radius:8px; padding:8px}
+    .mini{font-size:12px; color:var(--muted)}
+    .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+
+    .grid{display:grid; grid-template-columns: 1fr 360px; gap:12px; min-height:460px}
+    .card{background:#0c0c0c; border:1px solid var(--border); border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:10px; min-height:0}
+    .card h2{margin:0; font-size:14px; color:var(--ink)}
+
+    /* Output panel: strict monospace cell; we compute cols/rows to FIT this box */
+    #asciiOut{
+      flex:1 1 auto; min-height:320px; padding:10px;
+      background:#0d0d0d; border:1px dashed var(--border);
+      font-family:monospace; font-size:8px; line-height:8px; /* 1 char cell = 8x8px */
+      white-space:pre; overflow:auto; user-select:text;
+      word-break:keep-all; overflow-wrap:normal; /* never wrap: we control rows/cols */
+    }
+
+    /* Cursed ticker (no emoji, no shadows) */
+    #ticker{display:none; position:fixed; top:0; left:0; width:100%; background:#000; color:var(--ink);
+      border-bottom:1px solid var(--border); padding:6px; white-space:nowrap; overflow:hidden; z-index:50}
+    #ticker span{display:inline-block; padding-left:100%; animation:ticker 140s linear infinite}
+    @keyframes ticker{to{transform:translateX(-100%)}}
+
+    /* Subtle “permanent” cursed disturbances */
+    .flip{transform:perspective(1200px) rotateY(180deg)}
+    .melt{filter:hue-rotate(180deg) saturate(180%) blur(1px); transform:translateY(2px)}
+
+    @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important} }
+    @media (max-width:980px){ .grid{grid-template-columns:1fr} }
+
+    footer{display:flex; justify-content:space-between; align-items:center; gap:10px; border-top:1px dashed var(--border); padding-top:10px}
+    footer a{color:var(--ink); text-decoration:none}
+  </style>
+</head>
+<body>
+
+  <!-- Cursed ticker -->
+  <div id="ticker" aria-hidden="true"><span>
+    [ANOMALY CORE] // INTERFERENCE DETECTED // ESCAPE IS ILLUSORY // PLEASE REMAIN ORDINARY //
+    SIGNALS FROM FUTURE RUIN // ALL SYSTEMS NOMINAL // THIS IS NOT A WARNING //
+  </span></div>
+
+  <main class="wrap" role="application" aria-label="ASCII Anomaly tool">
+    <header>
+      <a class="brand" href="https://ironsignalworks.com?utm_source=ascii-anomaly&utm_medium=header&utm_campaign=lab-to-site" target="_blank" rel="noopener">
+        <img src="isw2_logo.png" alt="Iron Signal Works logo"/>
+        <h1>ASCII ANOMALY</h1>
+      </a>
+      <div class="row">
+        <div class="seg" role="group" aria-label="Mode">
+          <button id="regularBtn" aria-pressed="true">Regular</button>
+          <button id="cursedBtn"  aria-pressed="false">Cursed</button>
+        </div>
+        <button id="shareBtn" title="Copy reloadable link">SHARE</button>
+        <button id="helpBtn" aria-haspopup="dialog">HELP</button>
+      </div>
+    </header>
+
+    <section class="grid">
+      <div class="card">
+        <h2>ASCII Output</h2>
+        <pre id="asciiOut" aria-live="polite" aria-label="ASCII art output">[Awaiting image]</pre>
+      </div>
+
+      <aside class="card" aria-label="Controls">
+        <h2>Controls</h2>
+
+        <div class="row">
+          <input type="file" id="file" accept="image/*" aria-label="Choose image"/>
+          <select id="palette" aria-label="Palette">
+            <option value="@#S%?*+;:,.">@#S%?*+;:,. (Default)</option>
+            <option value="#WMBRXVYIti+=;:,.">#WMBRXVYIti+=;:,.</option>
+            <option value="$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,^`'.">Dense ($…')</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label class="mini" for="invert">Theme</label>
+          <select id="invert" aria-label="Theme">
+            <option value="0">Dark bg / neon text</option>
+            <option value="1">Light bg / dark text</option>
+          </select>
+          <label class="mini"><input type="checkbox" id="fitFrame" checked/> Fit to frame</label>
+          <label class="mini" for="cols">Cols</label>
+          <input id="cols" type="number" min="40" max="240" value="160" style="width:90px"/>
+        </div>
+
+        <div class="row">
+          <button id="convertBtn" disabled>Convert</button>
+          <span class="mini">“Fit to frame” prevents mega lines.</span>
+        </div>
+
+        <div class="row">
+          <button id="downloadTxt" disabled>Export .TXT</button>
+          <button id="exportPng" disabled>Export .PNG</button>
+        </div>
+
+        <!-- Cursed-only nonsense actions -->
+        <div id="cursedActions" class="row" style="display:none">
+          <button id="eraseBtn" title="Erase Memory">ERASE MEMORY</button>
+          <button id="meltBtn"  title="Meltdown">MELTDOWN</button>
+          <button id="invertBtn" title="Invert Reality">INVERT REALITY</button>
+          <button id="loopBtn"   title="Loop Jam">LOOP JAM</button>
+          <button id="fragBtn"   title="Fragment">FRAGMENT</button>
+          <button id="calmBtn"   title="Silence">CALM</button>
+        </div>
+
+        <p class="mini">Local-only processing. Exports include an Iron Signal Works signature.</p>
+      </aside>
+    </section>
+
+    <footer>
+      <div>
+        ⚡ Built by <a href="https://ironsignalworks.com?utm_source=ascii-anomaly&utm_medium=footer&utm_campaign=lab-to-site" target="_blank" rel="noopener">Iron Signal Works</a>
+        <div class="mini">Explore more experiments • contractor-ready</div>
+      </div>
+      <a class="mini" href="https://ironsignalworks.com#hire?utm_source=ascii-anomaly&utm_medium=footer-cta&utm_campaign=lab-to-site" target="_blank" rel="noopener">Hire us →</a>
+    </footer>
+  </main>
+
+  <!-- Instructions -->
+  <dialog id="help" aria-label="Instructions">
+    <form method="dialog" style="border:1px solid var(--border); border-radius:10px; padding:16px; background:#101010; color:#eaeaea; width:min(720px,92vw)">
+      <h3 style="margin:0 0 10px 0; color:var(--ink)">How to use</h3>
+      <ul>
+        <li><b>Convert</b> auto-fits ASCII to the output frame (no mega lines).</li>
+        <li><b>Export .PNG / .TXT</b> include an ISW signature footer.</li>
+        <li><b>Cursed</b> runs persistent screen flips/melts + live ASCII band-shift/glitch.</li>
+        <li><b>Share</b> copies a reloadable link with UTM tags.</li>
+        <li>Keys: <b>Ctrl/⌘+Enter</b> Convert • <b>Esc</b> closes this.</li>
+      </ul>
+      <div class="mini">Effects honor <em>prefers-reduced-motion</em>. Audio is subtle and can be silenced with <b>CALM</b>.</div>
+      <button value="close" style="margin-top:8px">Close</button>
+    </form>
+  </dialog>
+
+  <script>
+  // ===== Elements =====
+  const E = id => document.getElementById(id);
+  const els = {
+    asciiOut: E('asciiOut'),
+    file: E('file'),
+    palette: E('palette'),
+    invertSel: E('invert'),
+    fitFrame: E('fitFrame'),
+    colsInput: E('cols'),
+    convertBtn: E('convertBtn'),
+    downloadTxt: E('downloadTxt'),
+    exportPng: E('exportPng'),
+    share: E('shareBtn'),
+    help: E('help'),
+    helpBtn: E('helpBtn'),
+    regularBtn: E('regularBtn'),
+    cursedBtn: E('cursedBtn'),
+    ticker: E('ticker'),
+    wrap: document.querySelector('.wrap'),
+    // cursed actions
+    cursedActions: E('cursedActions'),
+    eraseBtn: E('eraseBtn'),
+    meltBtn:  E('meltBtn'),
+    invertBtn:E('invertBtn'),
+    loopBtn:  E('loopBtn'),
+    fragBtn:  E('fragBtn'),
+    calmBtn:  E('calmBtn'),
+  };
+
+  // ===== State =====
+  let asciiText = '';
+  let displayText = '';         // live, possibly glitched view
+  const SIG = "\\n\\n=== Generated with ASCII ANOMALY // Iron Signal Works ===\\nhttps://ironsignalworks.com\\n";
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let mode = 'regular';
+  let hauntTimer=null, flipTimer=null, meltTimer=null, loopInterval=null, audioCtx=null, master=null;
+
+  // ===== Measure char cell precisely inside the output =====
+  function measureCell(){
+    const probe = document.createElement('span');
+    probe.textContent = 'MMMMMMMMMM';
+    probe.style.fontFamily = 'monospace';
+    probe.style.fontSize = getComputedStyle(els.asciiOut).fontSize;
+    probe.style.lineHeight = getComputedStyle(els.asciiOut).lineHeight;
+    probe.style.visibility = 'hidden';
+    els.asciiOut.appendChild(probe);
+    const rect = probe.getBoundingClientRect();
+    probe.remove();
+    const cw = rect.width / 10;
+    const ch = parseFloat(getComputedStyle(els.asciiOut).lineHeight) || 8;
+    return {cw, ch};
+  }
+
+  // ===== Compute cols/rows to FIT the frame (prevents mega lines) =====
+  function frameDimsFromBox(img){
+    const {cw, ch} = measureCell();
+    const cs = getComputedStyle(els.asciiOut);
+    const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+    const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+    const innerW = Math.max(0, els.asciiOut.clientWidth - padX);
+    const innerH = Math.max(0, els.asciiOut.clientHeight - padY);
+
+    const maxCols = Math.max(20, Math.floor(innerW / cw) - 1);
+    const maxRows = Math.max(20, Math.floor(innerH / ch) - 1);
+
+    const imgAspect = img.height / img.width;
+    const charAspect = ch / cw; // H/W
+    const desiredRows = Math.max(30, Math.round(maxCols * imgAspect / charAspect)); // at least 30 rows for real “picture”
+
+    let rows = Math.min(desiredRows, maxRows);
+    let cols = Math.min(maxCols, Math.max(30, Math.round(rows * (1/imgAspect) * charAspect)));
+
+    cols = Math.max(30, Math.min(cols, maxCols - 1));
+    rows = Math.max(30, Math.min(rows, maxRows - 1));
+    return {cols, rows};
+  }
+
+  // ===== Convert image → ASCII =====
+  function convertImageToAscii(img, cols, rows, palette, invert=false){
+    const c = document.createElement('canvas');
+    c.width = cols; c.height = rows;
+    const ctx = c.getContext('2d', {willReadFrequently:true});
+    ctx.drawImage(img, 0, 0, cols, rows);
+    const data = ctx.getImageData(0,0,cols,rows).data;
+
+    const chars = [...palette];
+    let out = '';
+    for (let y=0; y<rows; y++){
+      for (let x=0; x<cols; x++){
+        const i = (y*cols + x) * 4;
+        const r = data[i], g = data[i+1], b = data[i+2];
+        const lum = (r*0.299 + g*0.587 + b*0.114);
+        const t = invert ? lum : (255 - lum);
+        const idx = Math.floor(t/255 * (chars.length-1));
+        out += chars[idx];
+      }
+      out += "\\n";
+    }
+    return out;
+  }
+
+  // ===== Export (Canvas text → PNG) =====
+  function exportCanvasPNG(text, invert){
+    const lines = (text + SIG).split("\\n");
+    const font = '12px monospace';
+    const lineH = 16, pad = 8;
+
+    const m = document.createElement('canvas').getContext('2d');
+    m.font = font;
+    const width = Math.min(1600, Math.max(...lines.map(l => m.measureText(l).width)) + pad*2);
+    const height = Math.min(2200, lines.length*lineH + pad*2 + 24);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.ceil(width);
+    canvas.height = Math.ceil(height);
+    const ctx = canvas.getContext('2d');
+
+    const bg = invert ? '#f2fff8' : '#0a0a0a';
+    const fg = invert ? '#031a11' : '#00ff88';
+
+    ctx.fillStyle = bg; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.strokeStyle = 'rgba(0,255,136,.35)'; ctx.strokeRect(0.5,0.5,canvas.width-1,canvas.height-25.5);
+    ctx.font = font; ctx.fillStyle = fg; ctx.textBaseline='top';
+    lines.forEach((l,i)=> ctx.fillText(l, pad, pad + i*lineH));
+
+    // Footer band
+    ctx.fillStyle = invert ? '#e0f7ec' : '#000';
+    ctx.fillRect(0, canvas.height-24, canvas.width, 24);
+    ctx.fillStyle = fg; ctx.font='14px monospace';
+    ctx.fillText('ASCII ANOMALY — ironsignalworks.com', pad, canvas.height-18);
+
+    return canvas.toDataURL('image/png');
+  }
+
+  // ===== Mode toggle =====
+  function setMode(next){
+    const cursed = next === 'cursed';
+    els.regularBtn.setAttribute('aria-pressed', String(!cursed));
+    els.cursedBtn.setAttribute('aria-pressed', String(cursed));
+    els.ticker.style.display = cursed ? 'block' : 'none';
+    els.cursedActions.style.display = cursed ? 'flex' : 'none';
+    if (!cursed){ stopHaunt(); els.wrap.classList.remove('flip','melt'); }
+    else { startHaunt(); }
+    mode = next;
+    const p = new URLSearchParams(location.search);
+    p.set('mode', next);
+    history.replaceState(null, '', location.pathname + '?' + p.toString());
+  }
+
+  // ===== Cursed: persistent haunt (no shadows; text band-shifts + pulses) =====
+  function startHaunt(){
+    if (hauntTimer) return;
+    if (!prefersReduced) {
+      flipTimer = setInterval(()=>{ els.wrap.classList.add('flip'); setTimeout(()=>els.wrap.classList.remove('flip'), 260); }, 9000 + Math.random()*4000);
+      meltTimer = setInterval(()=>{ els.wrap.classList.add('melt'); setTimeout(()=>els.wrap.classList.remove('melt'), 320); }, 5000 + Math.random()*3000);
+    }
+    hauntTimer = setInterval(()=>{
+      if (!asciiText) return;
+      const lines = asciiText.split('\\n');
+      const h = lines.length;
+      if (h < 6) { els.asciiOut.textContent = asciiText; return; }
+
+      // Select a random band and shift it left/right a few chars
+      const bandH = Math.max(2, Math.floor(h * (0.05 + Math.random()*0.08)));
+      const start = Math.floor(Math.random()*(h - bandH));
+      const dir = Math.random() < 0.5 ? -1 : 1;
+      const amt = 1 + Math.floor(Math.random()*3);
+
+      for (let y=start; y<start+bandH; y++){
+        const line = lines[y] || '';
+        if (!line.length) continue;
+        if (dir > 0) lines[y] = line.slice(-amt) + line.slice(0,-amt);
+        else         lines[y] = line.slice(amt)  + line.slice(0, amt);
+        // sprinkle a couple random glyph swaps
+        if (Math.random()<0.5){
+          const x = Math.floor(Math.random()*line.length);
+          const pal = els.palette.value;
+          lines[y] = lines[y].substring(0,x)+pal[Math.floor(Math.random()*pal.length)]+lines[y].substring(x+1);
+        }
+      }
+      displayText = lines.join('\\n');
+      els.asciiOut.textContent = displayText;
+    }, prefersReduced ? 1500 : 500);
+  }
+  function stopHaunt(){
+    clearInterval(hauntTimer); clearInterval(flipTimer); clearInterval(meltTimer);
+    hauntTimer = flipTimer = meltTimer = null;
+    if (asciiText) els.asciiOut.textContent = asciiText;
+  }
+
+  // ===== Audio (for cursed buttons) =====
+  function ensureAudio(){
+    if (prefersReduced) return;
+    if (!audioCtx){
+      try{
+        audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+        master = audioCtx.createGain(); master.gain.value = 0.05; master.connect(audioCtx.destination);
+      }catch(_){}
+    }
+  }
+  function beep(freq=220, dur=0.15){
+    if (!audioCtx || prefersReduced) return;
+    const o = audioCtx.createOscillator(); o.type='square'; o.frequency.value = freq + (Math.random()*40-20);
+    const g = audioCtx.createGain(); g.gain.value = 0.0;
+    o.connect(g).connect(master);
+    const now = audioCtx.currentTime;
+    o.start();
+    g.gain.linearRampToValueAtTime(0.05, now+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, now+dur);
+    o.stop(now+dur+0.05);
+  }
+  function noiseBurst(dur=0.35){
+    if (!audioCtx || prefersReduced) return;
+    const buf = audioCtx.createBuffer(1, audioCtx.sampleRate*dur, audioCtx.sampleRate);
+    const ch = buf.getChannelData(0);
+    for (let i=0;i<ch.length;i++) ch[i] = (Math.random()*2-1) * (1 - i/ch.length);
+    const src = audioCtx.createBufferSource(); src.buffer = buf;
+    const bp = audioCtx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value = 200 + Math.random()*1200;
+    const g = audioCtx.createGain(); g.gain.value = 0.04;
+    src.connect(bp).connect(g).connect(master); src.start();
+  }
+  function stopAudio(){
+    if (loopInterval){ clearInterval(loopInterval); loopInterval=null; }
+    if (master) master.gain.value = 0.0;
+  }
+
+  // ===== Cursed buttons =====
+  function eraseMemory(){
+    if (!asciiText) return;
+    let lines = asciiText.split('\\n');
+    let i = lines.length;
+    const tick = ()=>{
+      if (i<=0){ els.asciiOut.textContent='[MEMORY: NULL]'; asciiText=''; displayText=''; return; }
+      i = Math.max(0, i - Math.ceil(lines.length/20));
+      els.asciiOut.textContent = lines.slice(0,i).join('\\n');
+      requestAnimationFrame(tick);
+    };
+    tick(); beep(140); noiseBurst();
+  }
+  function meltdown(){
+    if (!asciiText) return;
+    const palette = els.palette.value;
+    const lines = (displayText || asciiText).split('\\n');
+    let t=0;
+    els.wrap.classList.add('melt');
+    const id = setInterval(()=>{
+      const y = Math.floor(Math.random()*lines.length);
+      if (!lines[y]) return;
+      const x = Math.floor(Math.random()*lines[y].length);
+      const rch = palette[Math.floor(Math.random()*palette.length)];
+      lines[y] = lines[y].substring(0,x) + rch + lines[y].substring(x+1);
+      els.asciiOut.textContent = lines.join('\\n');
+      t++; if (t>120){ clearInterval(id); els.wrap.classList.remove('melt'); }
+    }, 20);
+    beep(320); noiseBurst();
+  }
+  function invertReality(){
+    els.invertSel.value = els.invertSel.value === '1' ? '0' : '1';
+    els.wrap.classList.add('flip'); setTimeout(()=> els.wrap.classList.remove('flip'), 300);
+    beep(480);
+  }
+  function loopJam(){
+    ensureAudio();
+    if (loopInterval){ clearInterval(loopInterval); loopInterval=null; els.loopBtn.textContent='LOOP JAM'; return; }
+    els.loopBtn.textContent='STOP JAM';
+    loopInterval = setInterval(()=>{ if (Math.random()<0.6) beep(180+Math.random()*400); if (Math.random()<0.5) noiseBurst(); }, prefersReduced?1500:500);
+  }
+  function fragment(){
+    if (!asciiText) return;
+    const lines = (displayText || asciiText).split('\\n');
+    const out = [];
+    for (let i=0;i<lines.length;i++){
+      out.push(lines[i]);
+      if (Math.random()<0.15) out.push(lines[i]);   // duplicate slice
+      if (Math.random()<0.08) out.push('');         // blank fracture
+    }
+    els.asciiOut.textContent = out.join('\\n');
+    setTimeout(()=> els.asciiOut.textContent = displayText || asciiText, 900);
+    beep(200); noiseBurst();
+  }
+
+  // ===== Events =====
+  els.file.addEventListener('change', ()=>{
+    const has = !!els.file.files.length;
+    els.convertBtn.disabled = !has;
+    if (has){ els.asciiOut.textContent='[Image loaded — ready to convert]'; els.downloadTxt.disabled=true; els.exportPng.disabled=true; }
+  });
+
+  els.convertBtn.addEventListener('click', (e)=>{
+    e.preventDefault();
+    if (!els.file.files[0]) return;
+
+    const img = new Image();
+    img.onload = ()=>{
+      let cols, rows;
+      if (els.fitFrame.checked){
+        const fit = frameDimsFromBox(img);
+        cols = fit.cols; rows = fit.rows;
+        els.colsInput.value = cols; // reflect
+      } else {
+        cols = Math.max(40, Math.min(240, +els.colsInput.value || 160));
+        const {cw,ch} = measureCell();
+        const imgAspect = img.height / img.width;
+        const charAspect = ch / cw;
+        rows = Math.max(30, Math.round(cols * imgAspect / charAspect));
+      }
+      asciiText = convertImageToAscii(img, cols, rows, els.palette.value, els.invertSel.value === '1');
+      displayText = ''; // reset live view
+      els.asciiOut.textContent = asciiText;
+      els.downloadTxt.disabled = false; els.exportPng.disabled = false;
+    };
+    const fr = new FileReader();
+    fr.onload = ev => img.src = ev.target.result;
+    fr.readAsDataURL(els.file.files[0]);
+  });
+
+  // TXT export
+  els.downloadTxt.addEventListener('click', ()=>{
+    const blob = new Blob([asciiText + SIG], {type:'text/plain'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `ascii_anomaly_${new Date().toISOString().replace(/[:.]/g,'-')}.txt`;
+    a.click(); URL.revokeObjectURL(a.href);
+  });
+
+  // PNG export (multiline, crisp)
+  els.exportPng.addEventListener('click', ()=>{
+    const data = exportCanvasPNG(asciiText, els.invertSel.value === '1');
+    const a = document.createElement('a');
+    a.href = data;
+    a.download = `ascii_anomaly_${new Date().toISOString().replace(/[:.]/g,'-')}.png`;
+    a.click();
+  });
+
+  // Share
+  els.share.addEventListener('click', ()=>{
+    const base = "https://ironsignalworks.com/ascii-anomaly";
+    const p = new URLSearchParams();
+    p.set('mode', mode);
+    if (asciiText){ p.set('art', btoa(unescape(encodeURIComponent(asciiText.slice(0,4000))))); }
+    p.set('pal', btoa(els.palette.value));
+    p.set('inv', els.invertSel.value);
+    p.set('fit', els.fitFrame.checked ? '1' : '0');
+    p.set('cols', els.colsInput.value);
+    p.set('utm_source','ascii-anomaly'); p.set('utm_medium','share'); p.set('utm_campaign','lab-to-site');
+    navigator.clipboard.writeText(base + '?' + p.toString()).then(()=> {
+      els.share.textContent='COPIED'; setTimeout(()=> els.share.textContent='SHARE', 1200);
+    });
+  });
+
+  // Help + keys
+  els.helpBtn.addEventListener('click', ()=> els.help.showModal());
+  document.addEventListener('keydown', e=>{
+    if ((e.metaKey||e.ctrlKey) && e.key==='Enter' && !els.convertBtn.disabled) els.convertBtn.click();
+    if (e.key==='Escape' && els.help.open) els.help.close();
+  });
+
+  // Mode buttons
+  els.regularBtn.addEventListener('click', ()=> setMode('regular'));
+  els.cursedBtn.addEventListener('click', ()=> setMode('cursed'));
+
+  // Cursed actions
+  els.eraseBtn.addEventListener('click', ()=>{ ensureAudio(); eraseMemory(); });
+  els.meltBtn .addEventListener('click', ()=>{ ensureAudio(); meltdown(); });
+  els.invertBtn.addEventListener('click', ()=>{ ensureAudio(); invertReality(); });
+  els.loopBtn .addEventListener('click', ()=>{ ensureAudio(); loopJam(); });
+  els.fragBtn .addEventListener('click', ()=>{ ensureAudio(); fragment(); });
+  els.calmBtn .addEventListener('click', ()=>{ stopAudio(); });
+
+  // Hydrate
+  (function hydrate(){
+    const p = new URLSearchParams(location.search);
+    setMode(p.get('mode') || 'regular');
+    if (p.get('pal')) try{ els.palette.value = atob(p.get('pal')); }catch(_){}
+    if (p.get('inv')) els.invertSel.value = p.get('inv');
+    if (p.get('fit')) els.fitFrame.checked = p.get('fit') === '1';
+    if (p.get('cols')) els.colsInput.value = +p.get('cols') || 160;
+    if (p.get('art')) try{
+      asciiText = decodeURIComponent(escape(atob(p.get('art'))));
+      els.asciiOut.textContent = asciiText; els.downloadTxt.disabled=false; els.exportPng.disabled=false;
+    }catch(_){}
+  })();
+  </script>
+</body>
+</html>
